@@ -22,6 +22,10 @@ from utils.action_predict_utils.trajectory_overlays import TrajectoryOverlays
 from utils.action_predict_utils.sequences import compute_sequences
 from utils.data_load import get_generator, get_static_context_data
 from utils.dataset_statistics import get_dataset_statistics
+from utils.semantic_occurences import get_occurences_of_traffic_elements
+from utils.semantic_processing import get_pixels_of_traffic_elements, get_segm_map_features
+from utils.semantic_segmentation import get_semantic_segmentation
+from utils.scene_graph.scene_graph import get_scene_graph
 from utils.utils import *
 
 
@@ -138,6 +142,7 @@ class ActionPredict(object):
                                      store_data_only: bool = False,
                                      model_opts: dict = None,
                                      submodels_paths: dict = None,
+                                     compute_time=False,
                                      debug: bool = False):
         """
         Generate visual feature sequences by reading and processing images
@@ -276,7 +281,12 @@ class ActionPredict(object):
                             img_features = cv2.resize(img_features, target_dim)
                         else:
                             raise ValueError('ERROR: Undefined value for crop_type {}!'.format(crop_type))
-                        
+                    
+                    if 'segmentation' in feature_type:
+                        img_features = get_semantic_segmentation(
+                            img_features, img_data, target_dim, feature_type, b, crop_mode,
+                            compute_time=compute_time)
+                        # print(f"Processing {img_save_path} ...")
                     if preprocess_input is not None:
                         img_features = preprocess_input(img_features)
                     if process:
@@ -972,6 +982,26 @@ class ActionPredict(object):
             if 'local' in d_type or 'context' in d_type or 'bbox' in d_type:
                 features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type,
                                                              submodels_paths=submodels_paths)
+            elif 'segmentation' in d_type: # todo: verify if this gets called
+                features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type)
+            elif 'segm_map_features' in d_type:
+                features, feat_shape = \
+                    get_segm_map_features(data, _data, model_opts)
+            elif 'segm_map_pixels' in d_type:
+                features, feat_shape = \
+                    get_pixels_of_traffic_elements(data, _data, model_opts)
+            elif 'segm_map_occurences' in d_type:
+                features, feat_shape = \
+                    get_occurences_of_traffic_elements(data, _data, model_opts)
+            elif d_type == 'scene_graph':
+                features, feat_shape = \
+                    get_scene_graph(data, _data, model_opts,
+                                    data_type=data_type)
+            elif d_type == 'scene_graph_doubled':
+                features, feat_shape = \
+                    get_scene_graph(data, _data, model_opts,
+                                    data_type=data_type,
+                                    get_previous_scene_graph=True)
             else:
                 features = data[d_type]
                 feat_shape = features.shape[1:]

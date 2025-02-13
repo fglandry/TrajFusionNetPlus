@@ -132,3 +132,15 @@ class SmallTrajectoryTransformerb(VanillaTransformer,
     def __init__(self,
                  **kwargs):
         super().__init__(**kwargs)
+
+class MultiBranchGraphTFV5(BaseTransformerModel, 
+                           ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class TrajFusionNetGraphV1(BaseTransformerModel, 
+                           ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)

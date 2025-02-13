@@ -3,7 +3,7 @@ from typing import Any
 
 
 def get_dataset_statistics(data_train: dict, model_opts: dict, 
-                           use_precomputed_values: bool = False) -> dict:
+                           use_precomputed_values: bool = True) -> dict:
     """ Get dataset statistics for various data features (mean, std dev, etc.). 
         Statistics are only computed on training data to avoid data leakage
     Args:
@@ -13,6 +13,27 @@ def get_dataset_statistics(data_train: dict, model_opts: dict,
                                        instead of recomputing values
     """
     if use_precomputed_values:
+        if model_opts["dataset_full"] == "jaad_all":
+            dataset_statistics = {
+                "dataset_means": {
+                    'scene_context_with_segmentation_v0': [0.020564525163150705],
+                    'scene_context_with_segmentation_v5': [0.02057521288912929],
+                    'scene_context': [0.43140541504829, 0.41739486305595647, 0.43278804277937344],
+                    'scene_context_doubled': [0.43140541504829, 0.41739486305595647, 0.43278804277937344],
+                    'scene_context_non_static': [0.43168591788409766, 0.41768097869166754, 0.43307793210699286] 
+                },
+                "dataset_std_devs": {
+                    'scene_context_with_segmentation_v0': [0.017205330101661215], 
+                    'scene_context_with_segmentation_v5': [0.017224886418055325], 
+                    'scene_context': [0.29391770977924025, 0.2938884989361296, 0.2861626088201237], 
+                    'scene_context_doubled': [0.29391770977924025, 0.2938884989361296, 0.2861626088201237], 
+                    'scene_context_non_static': [0.29414961750007607, 0.29414149452145005, 0.28640809656576754]
+                }
+            }
+
+        else:
+            raise Exception()
+        """
         dataset_statistics = {
             "dataset_means": {
                 "scene_context": [0.43140541504829, 0.41739486305595647, 0.43278804277937344],
@@ -23,6 +44,7 @@ def get_dataset_statistics(data_train: dict, model_opts: dict,
                 "local_context": [[0.14456805092887873, 0.14980047848430367, 0.15326681137702644]],
             }
         }
+        """
 
     else:
         # Calculate mean and std dev of all images in dataset

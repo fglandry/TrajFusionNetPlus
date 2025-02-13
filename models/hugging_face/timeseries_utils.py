@@ -18,6 +18,7 @@ def get_timeseries_datasets(data_train: dict, data_val: Any,
                             model: Any, generator: bool, 
                             video_model_config: dict, 
                             get_image_transform: bool = False,
+                            get_seg_maps_transforms = False,
                             img_model_config: dict = None,
                             ignore_sem_map: bool = True,
                             dataset_statistics: dict = None):
@@ -49,12 +50,25 @@ def get_timeseries_datasets(data_train: dict, data_val: Any,
         image_processor = AutoImageProcessor.from_pretrained(img_proc_ckpt)
         train_img_transform, val_img_transform = \
             get_image_transforms(image_processor, img_model_config)
+        
+    if get_seg_maps_transforms:    
+        # todo: revisit
+        train_segm_map_transform, val_segm_map_transform = \
+            get_image_transforms(image_processor, img_model_config, 
+                                 dataset_statistics=dataset_statistics,
+                                 modality="scene_context_with_segmentation_v0")
+        train_segm2_map_transform, val_segm2_map_transform = \
+            get_image_transforms(image_processor, img_model_config, 
+                                 dataset_statistics=dataset_statistics,
+                                 modality="scene_context_with_segmentation_v5")
 
     train_dataset = TorchTimeseriesDataset(
         data_train['data'][0], None, 'train', 
         generator=generator,
         transform=train_video_transform,
         img_transform=train_img_transform if get_image_transform else None,
+        segm_transform=train_segm_map_transform if get_seg_maps_transforms else None,
+        segm2_transform=train_segm2_map_transform if get_seg_maps_transforms else None,
         ignore_sem_map=ignore_sem_map,
         dataset_statistics=dataset_statistics)
     val_dataset = TorchTimeseriesDataset(
@@ -62,12 +76,16 @@ def get_timeseries_datasets(data_train: dict, data_val: Any,
         generator=generator, 
         transform=val_video_transform,
         img_transform=val_img_transform if get_image_transform else None,
+        segm_transform=train_segm_map_transform if get_seg_maps_transforms else None,
+        segm2_transform=train_segm2_map_transform if get_seg_maps_transforms else None,
         ignore_sem_map=ignore_sem_map,
         dataset_statistics=dataset_statistics)
     
     val_transforms_dicts = {
         "val_img_transform": val_img_transform if get_image_transform else None,
         "val_video_transform": val_video_transform if video_model_config else None,
+        "val_segm_map_transform": val_segm_map_transform if get_seg_maps_transforms else None,
+        "val_segm_map2_transform": val_segm2_map_transform if get_seg_maps_transforms else None,
         "dataset_statistics": dataset_statistics
     }
 
@@ -88,6 +106,8 @@ class HuggingFaceTimeSeriesModel():
         previous_timeseries_context = "previous_timeseries_context" in examples[0]
         image_context = "image_context" in examples[0]
         previous_image_context = "previous_image_context" in examples[0]
+        segm_context = "segmentation_context" in examples[0]
+        segm_context_2 = "segmentation_context_2" in examples[0]
         normalized_trajectory = "normalized_trajectory_values" in examples[0]
         is_tte_label = "tte_label" in examples[0]
         is_tte_pos_label = "tte_pos_label" in examples[0]
@@ -124,6 +144,12 @@ class HuggingFaceTimeSeriesModel():
         if previous_image_context:
             previous_image_context_values = torch.stack([example["previous_image_context"] for example in examples])
             return_dict.update({"previous_image_context": previous_image_context_values})
+        if segm_context:
+            segm_context_values = torch.stack([example["segmentation_context"] for example in examples])
+            return_dict.update({"segmentation_context": segm_context_values})
+        if segm_context_2:
+            segm_context_2_values = torch.stack([example["segmentation_context_2"] for example in examples])
+            return_dict.update({"segmentation_context_2": segm_context_2_values})
         if normalized_trajectory:
             normalized_trajectory_values = torch.stack([example["normalized_trajectory_values"] for example in examples])
             return_dict.update({"normalized_trajectory_values": normalized_trajectory_values})
@@ -140,7 +166,8 @@ class TorchTimeseriesDataset(Dataset):
     
     def __init__(self, data: Any, targets: Any, data_type: str, 
                  generator: bool = False, 
-                 transform: Any = None, img_transform: Any = None, 
+                 transform: Any = None, img_transform: Any = None,
+                 segm_transform=None, segm2_transform=None,  
                  ignore_sem_map: bool = False, complete_data: Any = None,
                  dataset_statistics: dict = None, debug: bool = False):
         
@@ -157,6 +184,7 @@ class TorchTimeseriesDataset(Dataset):
         self.video_data = False
         self.context_image = False
         self.video_embeddings = False
+        self.segm_map, self.segm_map2 = "", ""
         self.model_type = ""
 
         self.timeseries_context = False
@@ -179,9 +207,11 @@ class TorchTimeseriesDataset(Dataset):
             self.timeseries_context = "scene_graph" in self.data.input_type_list[1]
         elif len(self.data.input_type_list) >= 5:
             self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
-            self.timeseries_double_context = "scene_graph_previous" in self.data.input_type_list[3]
+            self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
             self.context_image = "scene_context" in self.data.input_type_list[4]
             self.previous_context_image = "scene_context_previous" in self.data.input_type_list[5]
+            self.segm_map = "scene_context_with_segmentation_v0" in self.data.input_type_list[0] 
+            self.segm_map2 = "scene_context_with_segmentation_v3" in self.data.input_type_list[7]
 
         if len(self.data[0][0]) > 1 and not ignore_sem_map and not \
             self.model_type.startswith("TrajectoryTransformerV3") and not \
@@ -192,6 +222,8 @@ class TorchTimeseriesDataset(Dataset):
 
         self.data_type = data_type
         self.img_transform = img_transform
+        self.segm_transform = segm_transform
+        self.segm2_transform = segm2_transform
         self.item_norm = True
         self.video_transform = transform if not self.video_embeddings else None
         self.generator = generator
@@ -234,6 +266,10 @@ class TorchTimeseriesDataset(Dataset):
             context_image_item = self._get_context_image_item(index)
         if self.previous_context_image:
             previous_context_image_item = self._get_context_image_item(index, get_previous_context=True)
+        if self.segm_map:
+            segm_map_item = self._get_segm_map_item(index)
+        if self.segm_map2:
+            segm_map2_item = self._get_segm_map2_item(index)
 
         labels_dict = self._process_labels(index,
                                            dataset_statistics=self.dataset_statistics)
@@ -246,6 +282,10 @@ class TorchTimeseriesDataset(Dataset):
             item.update(context_image_item)
         if self.previous_context_image:
             item.update(previous_context_image_item)
+        if self.segm_map:
+            item.update(segm_map_item)
+        if self.segm_map2:
+            item.update(segm_map2_item)
         if self.item_norm:
             item.update(item_norm)
         
@@ -298,10 +338,10 @@ class TorchTimeseriesDataset(Dataset):
         item = self.data[index]
         item = item[0] if self.data_type!='test' else item[0]
 
-        # todo: assuming the second item in list corresponds to the timeseries context data
-        obs_input_type_index = 1
-        if self.timeseries_double_context:
-            obs_input_type_index = 2
+        # todo: assuming the third/fourth item in list corresponds to the timeseries context data
+        obs_input_type_index = 2
+        #if self.timeseries_double_context:
+        #    obs_input_type_index = 3
         context_item = np.asarray(item[obs_input_type_index])
 
         context_item = np.squeeze(context_item) 
@@ -422,6 +462,56 @@ class TorchTimeseriesDataset(Dataset):
 
         return image_item
     
+    def _get_segm_map_item(self, index):
+        """
+        self.data is of type DataGenerator
+        """
+        item = self.data[index]
+        item = item[0] if self.data_type!='test' else item[0]
+
+        # todo: assuming the first item in list corresponds to the segmentation map
+        item = np.asarray(item[0])
+        item = np.squeeze(item)
+
+        x = convert_img_to_format_used_by_transform(item, debug=False)
+        
+        if self.segm_transform:
+            x = self.segm_transform(x)
+        
+        # Copy single channel to get 3 channels
+        #if torch.is_tensor(x):
+        #    x = x.repeat(3, 1, 1)
+        #else:
+        #    test = 10
+
+        image_item = {
+            "segmentation_context": x
+        }
+
+        return image_item
+    
+    def _get_segm_map2_item(self, index):
+        """
+        self.data is of type DataGenerator
+        """
+        item = self.data[index]
+        item = item[0] if self.data_type!='test' else item[0]
+
+        # todo: assuming the 8th item in list corresponds to the segmentation map
+        item = np.asarray(item[7])
+        item = np.squeeze(item)
+
+        x = convert_img_to_format_used_by_transform(item, debug=False)
+        
+        if self.segm2_transform:
+            x = self.segm2_transform(x)
+
+        image_item = {
+            "segmentation_context_2": x
+        }
+
+        return image_item
+    
     def __len__(self):
         return len(self.data)
 
@@ -522,9 +612,12 @@ def test_time_series_based_model(
     if training_result["val_transform"]:
         val_video_transform = training_result["val_transform"]["val_video_transform"]
         val_img_transform = training_result["val_transform"]["val_img_transform"]
+        val_segm_map_transform = training_result["val_transform"]["val_segm_map_transform"]
+        val_segm_map2_transform = training_result["val_transform"]["val_segm_map2_transform"]
         dataset_statistics = training_result["val_transform"]["dataset_statistics"]
     else:
         val_video_transform, val_img_transform = None, None
+        val_segm_map_transform, val_segm_map2_transform = None, None
     trainer = training_result["trainer"]
     
     if not generator:
@@ -536,6 +629,8 @@ def test_time_series_based_model(
                                           generator=generator, 
                                           transform=val_video_transform,
                                           img_transform=val_img_transform,
+                                          segm_transform=val_segm_map_transform,
+                                          segm2_transform=val_segm_map2_transform,
                                           ignore_sem_map=ignore_sem_map,
                                           complete_data=complete_data,
                                           dataset_statistics=dataset_statistics)
