@@ -48,7 +48,7 @@ class VAN(HuggingFaceImageClassificationModel):
             data_train, dataset_statistics
         )
 
-        model_ckpt = "Visual-Attention-Network/van-base"
+        model_ckpt = "Visual-Attention-Network/van-large"
         model = VanEncodingsForImageClassification.from_pretrained(
             model_ckpt,
             config=config,
@@ -240,6 +240,7 @@ def load_pretrained_van(dataset_name: str,
         if dataset_name in ["pie", "combined"]:
             checkpoint1 = "data/models/pie/VAN/weights_van1_pie"
             checkpoint2 = "data/models/pie/VAN/weights_van2_pie"
+            #checkpoint1 = "data/models/pie/VAN/15Feb2025-10h55m33s_VA12"
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
             checkpoint2 = "data/models/jaad_all/VAN/weights_van2_jaadall"
@@ -279,7 +280,7 @@ def get_van_image_processor_and_config(
     label2id = {label: i for i, label in enumerate(class_labels)}
     id2label = {i: label for label, i in label2id.items()}
 
-    model_ckpt = "Visual-Attention-Network/van-base"
+    model_ckpt = "Visual-Attention-Network/van-large"
     
     image_processor = AutoImageProcessor.from_pretrained(model_ckpt)
 

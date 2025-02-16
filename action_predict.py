@@ -630,6 +630,7 @@ class ActionPredict(object):
                     else:
                         d[k][i] = np.subtract(box_rel_coords, d["box_org"][i][0]).tolist()
                         d[k][i] = [c + speed_vals[idx] for idx, c in enumerate(d[k][i])]
+                        # d[k][i] = [c for idx, c in enumerate(d[k][i])]
             elif (k == 'box' and normalization_type == "relative_subtract") \
                 or k == 'center':
                 for i in range(len(d[k])):

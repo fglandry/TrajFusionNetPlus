@@ -115,6 +115,24 @@ class TrajectoryTransformerb(VanillaTransformer,
                  **kwargs):
         super().__init__(**kwargs)
 
+class TrajectoryTransformerNoSpeed(VanillaTransformer, 
+                                   ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class TrajectoryTransformerbNoSpeed(VanillaTransformer, 
+                                   ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class TrajFusionNetNoSpeed(BaseTransformerModel, 
+                           ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
 class SmallTrajFusionNet(BaseTransformerModel, 
                          ActionPredict):
     def __init__(self,
@@ -141,6 +159,12 @@ class MultiBranchGraphTFV5(BaseTransformerModel,
 
 class TrajFusionNetGraphV1(BaseTransformerModel, 
                            ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class GraphTransformer(BaseTransformerModel, 
+                       ActionPredict):
     def __init__(self,
                  **kwargs):
         super().__init__(**kwargs)

@@ -3,6 +3,7 @@ import os
 
 from datasets_data.jaad_data import JAAD
 from datasets_data.pie_data import PIE
+from itertools import chain
 
 
 def get_trajectory_sequences(configs: dict, free_memory: bool = False,
@@ -65,7 +66,7 @@ def combine_beh_seq(beh_seq_jaad, beh_seq_pie):
             beh_seq[k] = beh_seq_jaad[k] + beh_seq_pie[k]
 
     # Add speed # todo revisit
-    beh_seq['obd_speed'] = beh_seq_jaad['vehicle_act'] + beh_seq_pie['obd_speed']
+    # beh_seq['obd_speed'] = beh_seq_jaad['vehicle_act'] + beh_seq_pie['obd_speed']
 
     return beh_seq
 
@@ -118,6 +119,7 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
                         box_center_speed_seq = d["box_center_speed"][seq_idx]
                         combined_seq = [s + box_center_speed_seq[idx] + speed_seq[idx] for idx, s in enumerate(seq)]
                     else:
+                        # combined_seq = [s for idx, s in enumerate(seq)]
                         combined_seq = [s + speed_seq[idx] for idx, s in enumerate(seq)]
 
                     # Get trajectory following observation length

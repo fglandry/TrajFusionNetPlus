@@ -52,7 +52,8 @@ def run(config_file: str = None,
         train_end_to_end: bool = False,
         free_memory: bool = True, 
         compute_time_writing_to_disk: bool = False,
-        tune_hyperparameters: bool = False
+        tune_hyperparameters: bool = False,
+        cross_test: bool = False
     ):
     """
     Run train and test on the dataset with parameters specified in configuration file.
@@ -132,7 +133,8 @@ def run(config_file: str = None,
             configs['train_opts']['batch_size'] = 16
 
         beh_seq_train, beh_seq_val, beh_seq_test, beh_seq_test_cross_dataset = \
-            get_trajectory_sequences(configs, free_memory)
+            get_trajectory_sequences(configs, free_memory,
+                                     compute_cross_dataset_test=cross_test)
         
         model = ""
         submodel = ""
@@ -145,7 +147,8 @@ def run(config_file: str = None,
                 train_test_model(configs, beh_seq_train, beh_seq_val, beh_seq_test,
                                  beh_seq_test_cross_dataset, hyperparams,
                                  test_only=test_only,
-                                 train_end_to_end=train_end_to_end)
+                                 train_end_to_end=train_end_to_end,
+                                 enable_cross_dataset_test=cross_test)
         if dataset_override:
             break
     return saved_files_path # return path for last trained model
@@ -213,9 +216,9 @@ def train_test_model(configs: dict, beh_seq_train: dict,
             )
         else:
             if model_opts["dataset"] == "jaad":
-                model_opts["dataset"] = "pie"
+                model_opts["dataset"], model_opts["dataset_full"] = "pie", "pie"
             elif model_opts["dataset"] == "pie":
-                model_opts["dataset"] = "jaad"
+                model_opts["dataset"], model_opts["dataset_full"] = "jaad", "jaad_all"
             else:
                 raise
             print(f"Testing on {model_opts['dataset']} dataset...")
@@ -277,7 +280,8 @@ if __name__ == '__main__':
         opts, args = getopt.getopt(sys.argv[1:], 
                                    'hc:d:s:j:', ['help', 'config_file', 'dataset', 
                                                  'seq_type', 'traj_model_path',
-                                                 'test_only', 'train_end_to_end'])
+                                                 'test_only', 'train_end_to_end',
+                                                 'cross_test'])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -288,7 +292,7 @@ if __name__ == '__main__':
     config_file = None
     model_name = None
     dataset, seq_type, traj_model_path = None, None, None
-    test_only, train_end_to_end = False, False
+    test_only, train_end_to_end, cross_test = False, False, False
 
     for o, a in opts:
         if o in ["-h", "--help"]:
@@ -306,6 +310,8 @@ if __name__ == '__main__':
             test_only = True
         elif o in ["--train_end_to_end"]:
             train_end_to_end = True
+        elif o in ["--cross_test"]:
+            cross_test = True
 
     # if neither the config file or model name are provided
     if not config_file:
@@ -319,6 +325,7 @@ if __name__ == '__main__':
         train_end_to_end=train_end_to_end,
         dataset_override=dataset,
         seq_type_override=seq_type,
-        traj_model_path_override=traj_model_path
+        traj_model_path_override=traj_model_path,
+        cross_test=cross_test
     )
     print(f"Model saved under: {saved_files_path}")
