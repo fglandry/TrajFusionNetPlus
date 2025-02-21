@@ -12,6 +12,7 @@ from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransfor
 from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
 from models.hugging_face.model_trainers.trajectorytransformerb import load_pretrained_encoder_transformer
 from models.hugging_face.model_trainers.van import load_pretrained_van
+from models.hugging_face.model_trainers.visiontransformer import load_pretrained_vit
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TorchTimeseriesDataset, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
@@ -142,6 +143,7 @@ class TrajFusionNetGraphV1(HuggingFaceTimeSeriesModel):
         best_trainer = None
         half_epochs = round(epochs / 2)
         
+        """
         # Run first part of training procedure with the VAM branch disabled for 15 epochs
         # to improve learning in the SAM branch.
         # In order to do this, the weights in the VAM projection layer ('van_output_embed')
@@ -166,6 +168,7 @@ class TrajFusionNetGraphV1(HuggingFaceTimeSeriesModel):
             if trainer.state.best_metric > best_metric:
                 best_trainer = trainer
                 best_metric = trainer.state.best_metric
+        """
 
         # Run second part of training procedure with the VAM branch re-enabled       
         optimizer, lr_scheduler = get_optimizer(self, model, args, 
@@ -247,8 +250,8 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         # Classifier head parameters
         self.van_output_size = 256
         self.max_classifier_hidden_size = NET_OUTER_DIM
-        self.max_classifier_hidden_size_van = NET_INNER_DIM
-        self.fc1_neurons = 3 * self.max_classifier_hidden_size
+        self.max_classifier_hidden_size_van = 1280 # 2*NET_INNER_DIM
+        self.fc1_neurons = 2 * self.max_classifier_hidden_size
         self.fc2_neurons = NET_OUTER_DIM
         
         # Get pretrained VAN Models -------------------------------------------
@@ -258,24 +261,23 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
             add_classification_head=False,
             submodels_paths=submodels_paths)
 
-        #self.van2 = load_pretrained_van( # observed ped overlays
-        #    dataset_name,
-        #    is_predicted_overlays=False,
-        #    add_classification_head=False,
-        #    submodels_paths=submodels_paths)
+        self.van2 = load_pretrained_vit( # observed ped overlays
+            dataset_name,
+            is_predicted_overlays=False,
+            add_classification_head=False,
+            submodels_paths=submodels_paths)
 
         # Get pretrained encoder transformer -----------------------------------------
         self.traj_class_TF = load_pretrained_encoder_transformer(dataset_name,
                                                                  add_classification_head=False,
                                                                  submodels_paths=submodels_paths)
         
+        """
         self.context_transformer = load_pretrained_graph_transformer(
             dataset_name,
             add_classification_head=False,
             submodels_paths=None) # TODO: reset to submodels_paths=submodels_paths
-        
-        #self.context_transformer = VanillaTransformerCrossAttnModel2(
-        #    config_for_huggingface, config_for_context_timeseries)
+        """
 
         # Classifier layers
         if self.combine_branches_with_attention:
@@ -322,14 +324,28 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         )
         van_output = output1.pooler_output if return_dict else output1 # shape=[batch, 512]
 
-        van_output_cat = self.van_output_embed(van_output) # shape=[batch, 40]
+        output2 = self.van2(
+            previous_image_context,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict
+        )
+        van_output_prev = output2.pooler_output if return_dict else output2
+
+        van_output_cat = torch.cat([van_output_prev, 
+                                    van_output], dim=1)
+        van_output_cat = self.van_output_embed(van_output_cat) # shape=[batch, 40]
             
+        
+        # van_output_cat = self.van_output_embed(van_output) # shape=[batch, 40]
+
+        """    
         # Apply "Graph" Transformer to scene graph data
         timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
         ctx_tf_output = self.context_transformer(
             timeseries_context[:,:,:] # timeseries_context[:,0:5,:]
         ) # [B, 40]
         ctx_tf_output = self.ctx_tf_output_embed(ctx_tf_output)
+        """
         
         # Apply Encoder TF to trajectory values =============================================
 
@@ -347,7 +363,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
             x = self._concatenate_with_attention(self.self_attention, 
                     original_x, tuple_to_concat, self.max_classifier_hidden_size)
         else:
-            tuple_to_concat = [outputs_pred, ctx_tf_output, van_output_cat]
+            tuple_to_concat = [outputs_pred, van_output_cat]
             x = torch.cat(tuple_to_concat, dim=1) # shape=[batch, 80]
 
         # Apply fully-connected layers
@@ -423,6 +439,9 @@ def load_pretrained_trajfusionnet(dataset_name: str):
         checkpoint = "data/models/pie/TrajFusionNet/weights_trajfusionnet_pie"
     elif dataset_name == "jaad_all":
         checkpoint = "data/models/jaad_all/TrajFusionNet/weights_trajfusionnet_jaadall"
+        # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/17Feb2025-15h18m22s/checkpoint-16170"
+        # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-16170"
+        checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-12397"
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         

@@ -13,7 +13,7 @@ from transformers.models.timesformer.modeling_timesformer import TimesformerEmbe
 from transformers import logging
 
 METRICS_REL_DIR = "models/hugging_face/metrics"
-logging.set_verbosity_error()
+#logging.set_verbosity_error()
 
 
 def get_class_labels_info():

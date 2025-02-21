@@ -75,6 +75,14 @@ def add_segmentation_map_to_img_features(seg_model, img_features, segm_data, fea
                                                                               img_weight=0.0, seg_weight=1.0)
     elif 'segmentation_v5' in feature_type:
         img_features = segm_data # return segmentation map, but first element in sequence instead of last (already taken care of in 'get_static_context_data')
+    elif 'segmentation_v6' in feature_type:
+        seg_features, _, _ = seg_model.get_img_combined_with_segmentation_map(class_idx_tsr, image,
+                                                                              img_weight=0.0, seg_weight=1.0)
+        img_features[..., 0] = seg_features[..., 0]
+    elif 'segmentation_v7' in feature_type:
+        seg_features, _, _ = seg_model.get_img_combined_with_segmentation_map(class_idx_tsr, image,
+                                                                              img_weight=0.0, seg_weight=1.0)
+        img_features = np.append(img_features, seg_features, axis=2)
     else:
         segm_data = np.expand_dims(segm_data, 2)    
         img_features = np.append(img_features, segm_data, axis=2)

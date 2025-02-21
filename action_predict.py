@@ -259,12 +259,15 @@ class ActionPredict(object):
                             img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
                             show_image(img_features) if debug else None
                         elif 'ped_overlays' in crop_type:
-                            img_features = TrajectoryOverlays(
-                                model_opts, submodels_paths).compute_trajectory_overlays(
-                                    img_data, feature_type,
-                                    full_bbox_sequences, full_rel_bbox_seq, 
-                                    full_veh_speed, i)
-                            img_features = cv2.resize(img_features, target_dim)
+                            if '_v4' not in feature_type:
+                                img_features = TrajectoryOverlays(
+                                    model_opts, submodels_paths).compute_trajectory_overlays(
+                                        img_data, feature_type,
+                                        full_bbox_sequences, full_rel_bbox_seq, 
+                                        full_veh_speed, i)
+                                img_features = cv2.resize(img_features, target_dim)
+                            else: # ped overlays will be computed later
+                                img_features = img_data.copy()
                             show_image(img_features) if debug else None
                         elif 'remove_ped' in crop_type:
                             b_org = list(map(int, b[0:4])).copy()
@@ -286,7 +289,13 @@ class ActionPredict(object):
                         img_features = get_semantic_segmentation(
                             img_features, img_data, target_dim, feature_type, b, crop_mode,
                             compute_time=compute_time)
+                        if "_v4" in feature_type:
+                            img_features = TrajectoryOverlays(model_opts, submodels_paths).compute_trajectory_overlays(
+                                    img_features, feature_type, full_bbox_sequences, full_rel_bbox_seq, full_veh_speed, i)
+                            img_features = cv2.resize(img_features, target_dim)
+                            #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/sem_output_{str(time.time()).replace('.', '_')}.png", img_features)
                         # print(f"Processing {img_save_path} ...")
+                        
                     if preprocess_input is not None:
                         img_features = preprocess_input(img_features)
                     if process:

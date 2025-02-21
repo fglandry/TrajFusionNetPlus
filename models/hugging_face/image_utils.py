@@ -120,7 +120,7 @@ def get_image_item(index: int, data: Any, data_type: str,
 def convert_img_to_format_used_by_transform(item: np.ndarray, debug: bool):
     if item.shape[-1] == 4:
         x = Image.fromarray(item.astype('uint8'), 'RGBA') # return PIL image
-    elif item.shape[-1] == 5:
+    elif item.shape[-1] >= 5:
         x = item.astype('uint8') # return image as numpy array
     elif item.shape[-1] == 224:
         x = np.repeat(item[:,:,np.newaxis], 3, axis=2)

@@ -4,7 +4,7 @@ model_opts:
   generator: True
   obs_input_type: [scene_context_with_segmentation_v0, scene_context_with_segmentation_v5,
                    scene_graph, scene_graph_doubled,
-                   scene_context_with_ped_overlays_combined, scene_context_with_ped_overlays_previous,
+                   scene_context_with_ped_overlays_combined, scene_context_with_segmentation_v4_with_ped_overlays_combined,
                    scene_context_non_static,
                    box, veh_speed]
   frameworks:
@@ -18,5 +18,5 @@ model_opts:
 exp_opts:
   datasets: [pie]
   batch_size: [16]
-  epochs: [30]
+  epochs: [60]
   lr: [5.0e-06]

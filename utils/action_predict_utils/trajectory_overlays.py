@@ -118,8 +118,8 @@ class TrajectoryOverlays(metaclass=Singleton):
         absolute_pred_coords = np.concatenate([absolute_pred_coords, 
                                                np.expand_dims(denormalized[:,-1], 1)], axis=1)
 
-        if feature_type == "scene_context_with_ped_overlays_previous" or \
-            feature_type == "scene_context_with_ped_overlays_combined":
+        if "with_ped_overlays_previous" in feature_type or \
+            "with_ped_overlays_combined" in feature_type:
             # Add observed bounding boxes as overlays on image (first image in sequence)
             for idx, coords in enumerate(bbox_sequence):
                 if idx == 0 or ((idx+1) % 5 == 0): # add first bbox and then every 5th
@@ -127,8 +127,8 @@ class TrajectoryOverlays(metaclass=Singleton):
                     img_features[b_org[1]:b_org[3], b_org[0]:b_org[2], 0:2] = \
                         np.array(ade_palette()[idx])[0:2]
 
-        if feature_type == "scene_context_with_ped_overlays" or \
-            feature_type == "scene_context_with_ped_overlays_combined":
+        if "with_ped_overlays" in feature_type or \
+            "with_ped_overlays_combined" in feature_type:
             # Add predicted bounding boxes as overlays on image (last image in sequence)
             for idx, coords in enumerate(absolute_pred_coords):
 

@@ -5,10 +5,9 @@ import torch.utils.checkpoint
 from torchsummary import summary
 from typing import Optional
 
-from transformers import AutoImageProcessor
 from transformers import TrainingArguments, Trainer
-from transformers.models.van.modeling_van import VanEncoder
-from transformers import VanConfig, VanModel, VanPreTrainedModel
+from transformers import VanModel, VanPreTrainedModel
+from transformers import ViTPreTrainedModel, ViTImageProcessor, ViTForImageClassification, ViTModel
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndNoAttention
 
 from models.hugging_face.image_utils import test_image_based_model, HuggingFaceImageClassificationModel, TorchImageDataset
@@ -16,7 +15,7 @@ from models.hugging_face.utilities import compute_loss, get_class_labels_info, g
 from utils.data_load import DataGenerator
 
 
-class VAN(HuggingFaceImageClassificationModel):
+class VisionTransformer(HuggingFaceImageClassificationModel):
 
     def train(self,
               data_train: dict, 
@@ -44,12 +43,12 @@ class VAN(HuggingFaceImageClassificationModel):
         print("Starting model loading for model VAN: Visual Attention Network ===========================")
 
         self._device = get_device()
-        image_processor, config = get_van_image_processor_and_config(
+        image_processor, config = get_vit_image_processor_and_config(
             data_train, dataset_statistics
         )
 
-        model_ckpt = "Visual-Attention-Network/van-large"
-        model = VanEncodingsForImageClassification.from_pretrained(
+        model_ckpt = "google/vit-base-patch16-224-in21k"
+        model = CustomViTForImageClassification.from_pretrained(
             model_ckpt,
             config=config,
             ignore_mismatched_sizes=True)
@@ -133,7 +132,7 @@ class VAN(HuggingFaceImageClassificationModel):
 
         if test_only:
             is_predicted_overlays = "_previous" not in kwargs["complete_data"]["data_params"]["data_types"][0]
-            pretrained_model = load_pretrained_van(dataset_name,
+            pretrained_model = load_pretrained_vit(dataset_name,
                                                    is_predicted_overlays=is_predicted_overlays)
             training_result["trainer"].model = pretrained_model
 
@@ -145,15 +144,15 @@ class VAN(HuggingFaceImageClassificationModel):
         )
 
 
-class VanEncodingsForImageClassification(VanPreTrainedModel):
+class CustomViTForImageClassification(ViTPreTrainedModel):
     """ Adapted from the transformers library """
 
-    def __init__(self, config: VanConfig):
+    def __init__(self, config):
         super().__init__(config)
-        self.van = VanEncodingsModel(config)
+        self.vit = ViTModel(config)
         self._config = config
         self.classifier = (
-            nn.Linear(30, config.num_labels) if config.num_labels > 0 else nn.Identity()
+            nn.Linear(768, config.num_labels) if config.num_labels > 0 else nn.Identity()
         )
         self.post_init() # Initialize weights and apply final processing
 
@@ -167,7 +166,7 @@ class VanEncodingsForImageClassification(VanPreTrainedModel):
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        outputs = self.van(
+        outputs = self.vit(
             pixel_values, 
             output_hidden_states=output_hidden_states, 
             return_dict=return_dict)
@@ -185,56 +184,14 @@ class VanEncodingsForImageClassification(VanPreTrainedModel):
                             problem_type=self._config.problem_type)
 
 
-class VanEncodingsModel(VanPreTrainedModel):
-    """ Adapted from the transformers library """
 
-    def __init__(self, config: VanConfig):
-        super().__init__(config)
-        self.config = config
-        self.encoder = VanEncoder(config)
-        self.layernorm = nn.LayerNorm(config.hidden_sizes[-1], eps=config.layer_norm_eps) # final layernorm layer
-        self.dropout = nn.Dropout(p=0.2)
-        self.fcN = nn.Linear(config.hidden_sizes[-1], 30) 
-        self.post_init() # Initialize weights and apply final processing
-
-    def forward(
-        self,
-        pixel_values: torch.FloatTensor,
-        output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
-    ):
-        output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
-        )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-
-        encoder_outputs = self.encoder(
-            pixel_values,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-        )
-        last_hidden_state = encoder_outputs[0]
-        # global average pooling, n c w h -> n c
-        pooled_output = last_hidden_state.mean(dim=[-2, -1])
-        pooled_output = self.dropout(nn.ReLU()(self.fcN(pooled_output)))
-
-        if not return_dict:
-            return (last_hidden_state, pooled_output) + encoder_outputs[1:]
-
-        return BaseModelOutputWithPoolingAndNoAttention(
-            last_hidden_state=last_hidden_state,
-            pooler_output=pooled_output,
-            hidden_states=encoder_outputs.hidden_states,
-        )
-
-
-def load_pretrained_van(dataset_name: str,
+def load_pretrained_vit(dataset_name: str,
                         is_predicted_overlays: bool = True,
                         add_classification_head: bool = True,
                         submodels_paths: dict = None):
     if submodels_paths:
-        checkpoint1 = submodels_paths["van_path"]
-        checkpoint2 = submodels_paths["van_prev_path"]
+        checkpoint1 = submodels_paths["vit_path"]
+        checkpoint2 = submodels_paths["vit_prev_path"]
     else:
         label2id, id2label = get_class_labels_info()
         if dataset_name in ["pie", "combined"]:
@@ -244,12 +201,7 @@ def load_pretrained_van(dataset_name: str,
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
             checkpoint2 = "data/models/jaad_all/VAN/weights_van2_jaadall"
-            #checkpoint1 = "data/models/jaad_all/VAN/16Feb2025-13h47m07s"
-            #checkpoint1 = "data/models/jaad_all/VAN/16Feb2025-20h16m23s/checkpoint-8085"
-            #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-10780"
-            #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-5390"
-            #checkpoint2 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s"
-            checkpoint1 = "data/models/jaad_all/VAN/21Feb2025-13h01m53s/checkpoint-2156"
+            checkpoint2 = "data/models/jaad_all/VisionTransformer/17Feb2025-21h44m06s/checkpoint-9163"
 
         elif dataset_name == "jaad_beh":
             checkpoint1 = "data/models/jaad_beh/VAN/weights_van1_jaadbeh"
@@ -260,13 +212,13 @@ def load_pretrained_van(dataset_name: str,
     label2id, id2label = get_class_labels_info()
 
     if add_classification_head:
-        pretrained_model = VanEncodingsForImageClassification.from_pretrained(
+        pretrained_model = CustomViTForImageClassification.from_pretrained(
             checkpoint,
             id2label=id2label,
             label2id=label2id,
             ignore_mismatched_sizes=True)
     else:
-        pretrained_model = VanModel.from_pretrained(
+        pretrained_model = ViTModel.from_pretrained(
             checkpoint,
             id2label=id2label,
             label2id=label2id,
@@ -279,29 +231,37 @@ def load_pretrained_van(dataset_name: str,
     return pretrained_model
 
 
-def get_van_image_processor_and_config(
-        data_train: dict, 
-        dataset_statistics: dict = None
-    ):
+def get_vit_image_processor_and_config(data_train, dataset_statistics,
+                                       obs_input_type=None):
     class_labels = ["no_cross", "cross"]
     label2id = {label: i for i, label in enumerate(class_labels)}
     id2label = {i: label for label, i in label2id.items()}
 
-    model_ckpt = "Visual-Attention-Network/van-large"
+    model_ckpt = "google/vit-base-patch16-224-in21k"
+    image_processor = ViTImageProcessor.from_pretrained(model_ckpt)
     
-    image_processor = AutoImageProcessor.from_pretrained(model_ckpt)
+    if obs_input_type is None:
+        obs_input_type = data_train["data_params"]["data_types"][0]
+    if "flow_optical_v4" in obs_input_type:
+        # Image data has 4 channels (3 RGB + 1 OF)
+        image_processor.image_mean.append(image_processor.image_mean[-1])
+        image_processor.image_std.append(image_processor.image_std[-1])
+    elif ("flow_optical_v5" in obs_input_type):
+        image_processor = ViTImageProcessor.from_pretrained(model_ckpt)
+        # Image data has 5 channels (3 RGB + 2 OF)
+        image_processor.image_mean.append(image_processor.image_mean[-1])
+        image_processor.image_std.append(image_processor.image_std[-1])
+    else:
+        image_processor.image_mean = dataset_statistics["dataset_means"][obs_input_type]
+        image_processor.image_std = dataset_statistics["dataset_std_devs"][obs_input_type]
 
-    obs_input_type = data_train["data_params"]["data_types"][0]
-    image_processor.image_mean = dataset_statistics["dataset_means"][obs_input_type]
-    image_processor.image_std = dataset_statistics["dataset_std_devs"][obs_input_type]
-
-    # Get VAN model config
-    config = VanEncodingsForImageClassification.from_pretrained(
-        model_ckpt,
-        id2label=id2label,
-        label2id=label2id,
-        ignore_mismatched_sizes=True).config # TODO: there must be a better way to do this without loading the model
-    config.num_channels = 3 # TODO: change back to 3
-    config.problem_type = "single_label_classification"
+    config = ViTForImageClassification.from_pretrained(
+            model_ckpt,
+            id2label=id2label,
+            label2id=label2id,
+            ignore_mismatched_sizes=True).config # find something better to get proper config
+    
+    config.num_channels = 3
 
     return image_processor, config
+

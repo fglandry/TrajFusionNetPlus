@@ -630,7 +630,11 @@ class Static(ActionPredict):
         assert feature_type in ['local_box', 'local_context', 'scene', 'scene_context', 
                                 'scene_context_with_ped_overlays',
                                 'scene_context_with_ped_overlays_previous',
-                                'scene_context_with_ped_overlays_combined'
+                                'scene_context_with_ped_overlays_combined',
+                                'scene_context_with_segmentation_v4',
+                                'scene_context_with_segmentation_v4_with_ped_overlays_combined',
+                                'scene_context_with_segmentation_v6_with_ped_overlays_combined',
+                                'scene_context_with_segmentation_v7_with_ped_overlays_combined'
                                 ]
 
         _data_samples = {}
@@ -2334,3 +2338,37 @@ class SmallVAN(VAN, Static):
     def __init__(self,
                  **kwargs):
         super().__init__(**kwargs)
+
+
+class VisionTransformer(Static):
+
+    def __init__(self,
+                 dropout: int = 0.5,
+                 dense_activation: str = 'sigmoid',
+                 freeze_conv_layers: bool = False,
+                 weights: str = 'weights/c3d_sports1M_weights_tf.h5',
+                 **kwargs):
+        super().__init__(**kwargs)
+        # Network parameters
+        self._dropout = dropout
+        self._dense_activation = dense_activation
+        self._freeze_conv_layers = freeze_conv_layers
+        self._weights = weights
+        self._backbone = 'c3d'
+
+    def get_data(self, data_type: str, data_raw: dict, 
+                 model_opts: dict,
+                 *args, **kwargs):
+
+        assert len(model_opts['obs_input_type']) == 1
+
+        model_opts['normalize_boxes'] = False
+        model_opts['target_dim'] = (224, 224)
+        model_opts['process'] = False
+        model_opts['backbone'] = 'c3d'
+        data = super().get_data(data_type, data_raw, model_opts)
+        return data
+
+    def get_model(self, *args, **kwargs):
+        os.makedirs(os.path.dirname(self._weights), exist_ok=True)
+        return None
