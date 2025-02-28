@@ -19,8 +19,8 @@ def _verify_if_patch_is_positive(coord, map, patch_size=10):
     else:
         return False
 
-def _get_ped_coord(data, i, map_size=224):
-    bb = data["normalized_abs_box"][i][-1]
+def get_ped_coord(data, i, t, map_size=224):
+    bb = data["normalized_abs_box"][i][t]
     bb_nb_pixels = round(abs((bb[3] - bb[1]) * (bb[2] - bb[0]) * map_size * map_size))
     coord = [round((bb[1] + bb[3])*map_size/2), round((bb[0] + bb[2])*map_size/2)]
     return coord, bb_nb_pixels

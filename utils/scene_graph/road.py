@@ -9,7 +9,7 @@ from utils.utils import *
 
 struct = generate_binary_structure(2,2)
 
-def get_road_traffic_element(data, i, model, map, scene_context,
+def get_road_traffic_element(data, i, t, model, map, scene_context,
                              map_size, occurences,
                              graphormer_encoding=True,
                              debug=False):
@@ -21,7 +21,7 @@ def get_road_traffic_element(data, i, model, map, scene_context,
         display_map = copy.deepcopy(map)
         model.display_segmentation_map(display_map, img, unique_label_to_show=road_idx)
 
-    ped_coord = _get_seg_map_scaled_ped_coords(data, i, map_size)
+    ped_coord = _get_seg_map_scaled_ped_coords(data, i, t, map_size)
 
     road_cm_coord, road_cm_dist, road_cm_angle, road_min_coord, \
         road_min_dist, road_min_angle, ped_sem_category = \
@@ -42,10 +42,10 @@ def get_road_traffic_element(data, i, model, map, scene_context,
         ])
     else:
         occurences.extend([                             # vertex0_central_ped
-            [normalized_ped_coord[0], normalized_ped_coord[1]],
+            # [normalized_ped_coord[0], normalized_ped_coord[1]],
             [road_cm_coord[0], road_cm_coord[1]],    # vertex1_road_cm
-            [road_min_coord[0], road_min_coord[1]],  # vertex2_min_coord
             [road_cm_dist, road_cm_angle],           # edge01_road_cm_dist
+            [road_min_coord[0], road_min_coord[1]],  # vertex2_min_coord
             [road_min_dist, road_min_angle],          # edge02_road_min_dist
             # [ped_sem_category, ped_sem_category]
         ])

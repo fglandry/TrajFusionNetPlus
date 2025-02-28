@@ -123,7 +123,7 @@ def _calculate_stats_for_img_like_data(data_type: str, means: dict,
 def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray, 
                                         dataset_statistics: dict, model_opts: dict,
                                         include_labels: bool = True,
-                                        use_precomputed_values: bool = True):
+                                        use_precomputed_values: bool = False):
     
     if use_precomputed_values:
         dataset_statistics["dataset_maxs"], dataset_statistics["dataset_mins"] = {}, {}

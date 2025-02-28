@@ -2,10 +2,8 @@ model_opts:
   model: GraphTransformer
   apply_class_weights: True
   generator: True
-  obs_input_type: [scene_context_with_segmentation_v0, scene_context_with_segmentation_v5,
-                   scene_graph, scene_graph_doubled,
-                   scene_context_with_ped_overlays_combined, scene_context_with_ped_overlays_previous,
-                   scene_context_non_static,
+  obs_input_type: [scene_video_with_segmentation_v0,
+                   scene_graph,
                    box, veh_speed]
   frameworks:
     pytorch: True
@@ -13,10 +11,10 @@ model_opts:
     multi-gpu: False
   process_input_features:
     enabled: True
-    indexes_to_stack: [7, 8]
+    indexes_to_stack: [2, 3]
     static_features_indexes: []
 exp_opts:
-  datasets: [pie]
+  datasets: [jaad_all]
   batch_size: [16]
   epochs: [30]
   lr: [5.0e-06]

@@ -2,7 +2,7 @@ import copy
 from scipy import ndimage
 from scipy.ndimage import generate_binary_structure, label as scipy_label
 
-from utils.scene_graph.utils import _get_ped_coord
+from utils.scene_graph.utils import get_ped_coord
 from utils.semantic_processing import _get_distance_between_points, _get_angle_between_points
 from utils.semantic_occurences import _is_veh_on_road
 from utils.utils import *
@@ -10,7 +10,7 @@ from utils.utils import *
 struct = generate_binary_structure(2,2)
 
 
-def get_vehicle_traffic_element(data, i, model, map, scene_context,
+def get_vehicle_traffic_element(data, i, t, model, map, scene_context,
                                 map_size, occurences, 
                                 graphormer_encoding=True,
                                 debug=False):
@@ -24,13 +24,13 @@ def get_vehicle_traffic_element(data, i, model, map, scene_context,
         model.display_segmentation_map(display_map, img, unique_label_to_show=ped_idx)
     """
 
-    occurences = _get_occurences_of_vehicles(data, i, model, map, 
+    occurences = _get_occurences_of_vehicles(data, i, t, model, map, 
                     scene_context, map_size, veh_idx, occurences, 
                     graphormer_encoding, debug)
 
     return occurences
 
-def _get_occurences_of_vehicles(data, i, model, map, scene_context,
+def _get_occurences_of_vehicles(data, i, t, model, map, scene_context,
                                 map_size, veh_idx, occurences, 
                                 graphormer_encoding,
                                 debug=False):
@@ -38,7 +38,7 @@ def _get_occurences_of_vehicles(data, i, model, map, scene_context,
     MAX_DIST = int(math.hypot(map.shape[0], map.shape[1]))
     min_coord = [-1, -1]
     min_angle = math.pi
-    ped_coord, bb_nb_pixels = _get_ped_coord(data, i, map_size)
+    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size)
         
     # Get vehicles mask
     map = copy.deepcopy(map)

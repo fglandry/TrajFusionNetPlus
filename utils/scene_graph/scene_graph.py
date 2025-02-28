@@ -1,7 +1,7 @@
 from scipy.ndimage import generate_binary_structure
 
 from models.hugging_face.utils.semantic_segmentation import SegformerForSemanticSegmentationWrapper
-from utils.scene_graph.pedestrian import get_pedestrians_traffic_element
+from utils.scene_graph.pedestrian import get_pedestrians_traffic_element, get_target_pedestrian_traffic_element
 from utils.scene_graph.road import get_road_traffic_element
 from utils.scene_graph.sidewalk import get_sidewalk_traffic_element
 from utils.scene_graph.vehicle import get_vehicle_traffic_element
@@ -39,10 +39,15 @@ def get_scene_graph(data, processed_data, model_opts,
                     get_previous_scene_graph=False, 
                     debug=False,
                     format_for_graphormer=True):
-    if not get_previous_scene_graph:
-        semantic_map_idx = model_opts["obs_input_type"].index("scene_context_with_segmentation_v0")
-    else:
-        semantic_map_idx = model_opts["obs_input_type"].index("scene_context_with_segmentation_v5")
+    video_graph = False
+    try:
+        semantic_map_idx = model_opts["obs_input_type"].index("scene_video_with_segmentation_v0")
+        video_graph = True
+    except:
+        if not get_previous_scene_graph:
+            semantic_map_idx = model_opts["obs_input_type"].index("scene_context_with_segmentation_v0")
+        else:
+            semantic_map_idx = model_opts["obs_input_type"].index("scene_context_with_segmentation_v5")
     
     semantic_maps = processed_data[semantic_map_idx]
 
@@ -61,7 +66,7 @@ def get_scene_graph(data, processed_data, model_opts,
 
     scene_type = "scene_graph_doubled" if get_previous_scene_graph else "scene_graph"
     path_to_features, _ = get_path(save_folder=scene_type,
-                               dataset=model_opts["dataset"],
+                               dataset=model_opts["dataset_full"],
                                save_root_folder='data/features')
     feature_folder_path = os.path.join(path_to_features, data_type)
     print(f"Generating features type={scene_type}, save_path={feature_folder_path}")
@@ -73,51 +78,30 @@ def get_scene_graph(data, processed_data, model_opts,
             features.append(feature)
             continue
 
-        map_path = semantic_maps[i][0]
-        map = open_pickle_file(map_path)
-        """
-        if i==200:
-            scene_context_path = scene_context[i][0]
-            scene_img = open_pickle_file(scene_context_path)
-            SEGFORMER_MODEL.display_segmentation_map(map, scene_img, get_img_combined_with_segmentation_map=True)
-        debug = False # ToDo: remove
-        """
+        if video_graph:
+            features_for_seq = []
+            for t in range(len(semantic_maps[i])):
+                map_path = semantic_maps[i][t]
+                sorted_occurences = get_scene_graph_for_timestep(
+                                        map_path, data, i, t, MAP_SIZE,
+                                        SEGFORMER_MODEL, model_opts, scene_context,
+                                        debug=False
+                                    )
+                features_for_seq.append(sorted_occurences)
+            features.append(features_for_seq)
+            save_data_in_pkl(feature_folder_path, feature_save_path, features_for_seq)
 
-        occurences = []
-
-        """
-        occurences = get_target_pedestrian_traffic_element(
-            data, i, occurences, model_opts, debug)
-        """
+        else:
+            map_path = semantic_maps[i][0]
+            sorted_occurences = get_scene_graph_for_timestep(
+                                    map_path, data, i, t, MAP_SIZE,
+                                    SEGFORMER_MODEL, model_opts, scene_context,
+                                    debug=False
+                                )
+            feature = [sorted_occurences] * seq_len # copy features for all sequence idx
+            features.append(feature)
+            save_data_in_pkl(feature_folder_path, feature_save_path, feature)
         
-        occurences = get_road_traffic_element(
-            data, i, SEGFORMER_MODEL, map, scene_context, 
-            MAP_SIZE, occurences, debug=debug)
-        
-        occurences = get_sidewalk_traffic_element(
-            data, i, SEGFORMER_MODEL, map, scene_context, 
-            MAP_SIZE, occurences, debug=debug)
-        
-        occurences = get_pedestrians_traffic_element(
-            data, i, SEGFORMER_MODEL, map, scene_context, 
-            MAP_SIZE, occurences, debug=debug)
-        
-        occurences = get_vehicle_traffic_element(
-            data, i, SEGFORMER_MODEL, map, scene_context, 
-            MAP_SIZE, occurences, debug=debug)
-        
-        vertex_edges_indices = [1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0] # 1 is a vertex, 0 is an edge
-        # vertex_edges_indices = [1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2]
-        vertices = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==1]
-        edges = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==0]
-        others = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==2]
-        sorted_occurences = vertices + edges + others
-        
-        feature = [sorted_occurences] * seq_len # copy features for all sequence idx
-        features.append(feature)
-
-        # Save the file
-        save_data_in_pkl(feature_folder_path, feature_save_path, feature)
 
     #if format_for_graphormer:
     #    features = _format_data_for_graphormer(features)
@@ -127,6 +111,49 @@ def get_scene_graph(data, processed_data, model_opts,
 
     return features, feat_size
 
+def get_scene_graph_for_timestep(map_path, data, i, t, map_size,
+                                 segformer_model, model_opts, scene_context,
+                                 debug=False):
+    map = open_pickle_file(map_path)
+    """
+    if i==200:
+        scene_context_path = scene_context[i][0]
+        scene_img = open_pickle_file(scene_context_path)
+        SEGFORMER_MODEL.display_segmentation_map(map, scene_img, get_img_combined_with_segmentation_map=True)
+    debug = False # ToDo: remove
+    """
+
+    occurences = []
+
+    occurences = get_target_pedestrian_traffic_element(
+        data, i, t, map, map_size, occurences, model_opts, debug=debug)
+
+    occurences = get_pedestrians_traffic_element(
+        data, i, t, segformer_model, map, scene_context, 
+        map_size, occurences, debug=debug)
+    
+    occurences = get_road_traffic_element(
+        data, i, t, segformer_model, map, scene_context, 
+        map_size, occurences, debug=debug)
+    
+    occurences = get_sidewalk_traffic_element(
+        data, i, t, segformer_model, map, scene_context, 
+        map_size, occurences, debug=debug)
+    
+    occurences = get_vehicle_traffic_element(
+        data, i, t, segformer_model, map, scene_context, 
+        map_size, occurences, debug=debug)
+    
+    vertex_edges_indices = [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0] # 1 is a vertex, 0 is an edge
+    # vertex_edges_indices = [1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2]
+    vertices = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==1]
+    edges = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==0]
+    others = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==2]
+    sorted_occurences = vertices + edges + others
+
+    return sorted_occurences
+    
+    
 def _format_data_for_graphormer(features):
     test = 10
 
@@ -142,16 +169,3 @@ def _format_data_for_graphormer(features):
                 "attn_edge_type": None # torch.LongTensor,
             }
     return features
-
-
-def get_target_pedestrian_traffic_element(data, i, occurences, model_opts, 
-                                          debug=False):
-    features = []
-
-    for d_type in model_opts['obs_input_type']:
-        if "box" in d_type: # ToDo: verify if that always holds
-            last_seq_element = data[d_type][i][-1]
-            features.extend(last_seq_element.tolist())
-
-    occurences.extend(features)
-    return occurences

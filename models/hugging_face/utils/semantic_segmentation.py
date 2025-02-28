@@ -35,7 +35,7 @@ class SegformerForSemanticSegmentationWrapper(metaclass=Singleton):
         self.model = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b3-finetuned-cityscapes-1024-1024")
         self.extractor = SegformerFeatureExtractor()
 
-    def run(self, img_features: np.ndarray, debug=True):
+    def run(self, img_features: np.ndarray, debug=False):
         #url = "http://images.cocodataset.org/val2017/000000039769.jpg"
         #image = Image.open(requests.get(url, stream=True).raw)
         #show_image(img_features)

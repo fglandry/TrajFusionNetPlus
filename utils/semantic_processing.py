@@ -111,10 +111,10 @@ def _get_useful_category_indexes(useful_categories, id2label):
     useful_category_indexes.sort()
     return useful_category_indexes
 
-def _get_seg_map_scaled_ped_coords(data, i, map_size):
+def _get_seg_map_scaled_ped_coords(data, i, t, map_size):
     """ Get pedestrian coordinates on 224 x 224 segmentation map
     """
-    ped_box_coords = data["box_org"][i][-1] # get pedestrian position on last frame
+    ped_box_coords = data["box_org"][i][t]
     ped_coord = [
         int((ped_box_coords[1]+ped_box_coords[3]) / 2 * (map_size / 1080)),
         int((ped_box_coords[0]+ped_box_coords[2]) / 2 * (map_size / 1920))

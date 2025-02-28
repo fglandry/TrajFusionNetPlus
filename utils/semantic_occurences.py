@@ -54,10 +54,10 @@ def get_occurences_of_traffic_elements(data, processed_data, model_opts, debug=F
     features = np.array(features)
     return features, features.shape[1:]
 
-def _get_occurences_of_pedestrians(data, i, model, map, scene_context,
+def _get_occurences_of_pedestrians(data, i, t, model, map, scene_context,
                                    map_size, occurences, debug=False):
     ped_idx = 11
-    ped_coord, bb_nb_pixels = _get_ped_coord(data, i, map_size)
+    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size)
         
     # Get pedestrians mask
     map[map != ped_idx] = -1
@@ -175,8 +175,8 @@ def _get_occurences_of_vehicles(i, model, map, scene_context,
     occurences.extend([nb_vehicles, cm_largest_veh_norm[0], cm_largest_veh_norm[1], veh_on_road])
     return occurences
 
-def _get_ped_coord(data, i, map_size=224):
-    bb = data["normalized_abs_box"][i][-1]
+def get_ped_coord(data, i, t, map_size=224):
+    bb = data["normalized_abs_box"][i][t]
     bb_nb_pixels = round(abs((bb[3] - bb[1]) * (bb[2] - bb[0]) * map_size * map_size))
     coord = [round((bb[1] + bb[3])*map_size/2), round((bb[0] + bb[2])*map_size/2)]
     return coord, bb_nb_pixels

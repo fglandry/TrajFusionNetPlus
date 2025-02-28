@@ -2,7 +2,7 @@ import copy
 from scipy import ndimage
 from scipy.ndimage import generate_binary_structure, label as scipy_label
 
-from utils.scene_graph.utils import _get_ped_coord, _verify_if_patch_is_positive
+from utils.scene_graph.utils import get_ped_coord, _verify_if_patch_is_positive
 from utils.semantic_processing import _get_distance_between_points, \
     _get_seg_map_scaled_ped_coords, _get_angle_between_points
 from utils.utils import *
@@ -10,7 +10,7 @@ from utils.utils import *
 struct = generate_binary_structure(2,2)
 
 
-def get_pedestrians_traffic_element(data, i, model, map, scene_context,
+def get_pedestrians_traffic_element(data, i, t, model, map, scene_context,
                                     map_size, occurences, 
                                     graphormer_encoding=True,
                                     debug=False):
@@ -25,12 +25,12 @@ def get_pedestrians_traffic_element(data, i, model, map, scene_context,
     """
 
     occurences = _get_occurences_of_pedestrians(
-                    data, i, model, map, scene_context, map_size, 
+                    data, i, t, model, map, scene_context, map_size, 
                     ped_idx, occurences, graphormer_encoding, debug)
 
     return occurences
 
-def _get_occurences_of_pedestrians(data, i, model, map, scene_context,
+def _get_occurences_of_pedestrians(data, i, t, model, map, scene_context,
                                    map_size, ped_idx, occurences, 
                                    graphormer_encoding,
                                    debug=False):
@@ -38,7 +38,7 @@ def _get_occurences_of_pedestrians(data, i, model, map, scene_context,
     MAX_DIST = int(math.hypot(map.shape[0], map.shape[1]))
     min_coord = [-1, -1]
     min_angle = math.pi
-    ped_coord, bb_nb_pixels = _get_ped_coord(data, i, map_size)
+    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size)
         
     # Get pedestrians mask
     map = copy.deepcopy(map)
@@ -140,4 +140,31 @@ def _get_occurences_of_pedestrians(data, i, model, map, scene_context,
 
     #occurences.extend([in_group, nb_pedestrians]) # global occurence features
     occurences.extend(groups_features) # scene graph groups features
+    return occurences
+
+def get_target_pedestrian_traffic_element(data, i, t, map, map_size, occurences, 
+                                          model_opts, debug=False):
+    features = []
+
+    """
+    for d_type in model_opts['obs_input_type']:
+        if "box" in d_type: # ToDo: verify if that always holds
+            last_seq_element = data[d_type][i][-1]
+            features.extend(last_seq_element.tolist())
+    """
+    MAX_DIST = int(math.hypot(map.shape[0], map.shape[1]))
+    min_coord = [-1, -1]
+    min_angle = math.pi
+    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size)
+
+    features.extend(
+        [
+            [ped_coord[0]/map_size, # center of mass x
+            ped_coord[1]/map_size], # center of mass y
+            #[0, # MAX_DIST/MAX_DIST, # current ped dist
+            #0] # min_angle/math.pi,
+        ]
+    )
+
+    occurences.extend(features)
     return occurences

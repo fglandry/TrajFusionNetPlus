@@ -63,8 +63,8 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
         # Parameters for context transformer
         timeseries_element = data_train['data'][0][0][0][-1]
         timeseries_context_element = data_train['data'][0][0][0][2]
-        encoder_input_size = timeseries_element.shape[-1] + 30
-        context_len = timeseries_context_element.shape[-2]
+        encoder_input_size = timeseries_element.shape[-1]
+        context_len = 45 # timeseries_context_element.shape[-2]
         config_for_context_timeseries = get_config_for_context_timeseries(
             encoder_input_size, context_len, hyperparams)
         
@@ -85,7 +85,7 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
         train_dataset, val_dataset, val_transforms_dicts = get_timeseries_datasets(
             data_train, data_val, model, generator, None,
             get_image_transform=True, img_model_config=None,
-            get_seg_maps_transforms=True,
+            #get_seg_maps_transforms=True,
             dataset_statistics=dataset_statistics)
 
         args = TrainingArguments(
@@ -213,10 +213,35 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # Apply "Graph" Transformer to scene graph data
-        timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
+        last_timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
+        first_timeseries_context = timeseries_context[:,0,:,:]
+        middle_timeseries_context = timeseries_context[:,8,:,:]
+
+        nodes = torch.cat((first_timeseries_context[:,0:8,:],
+                           middle_timeseries_context[:,0:8,:],
+                           last_timeseries_context[:,0:8,:]), dim=1)
+        edges = torch.cat((first_timeseries_context[:,8:,:],
+                           middle_timeseries_context[:,8:,:], 
+                           last_timeseries_context[:,8:,:]), dim=1)
+        timeseries_context_combined = torch.cat((nodes, edges), dim=1)
+
         ctx_tf_output = self.context_transformer(
-            timeseries_context[:,:,:] # timeseries_context[:,0:5,:]
+            timeseries_context_combined # timeseries_context[:,0:5,:]
         ) # [B, 40]
+        
+        """
+        # Apply "Graph" Transformer to scene graph data
+        timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
+        previous_timeseries_context = previous_timeseries_context[:,-1,:,:]
+
+        nodes = torch.cat((previous_timeseries_context[:,0:8,:], timeseries_context[:,0:8,:]), dim=1)
+        edges = torch.cat((previous_timeseries_context[:,8:,:], timeseries_context[:,8:,:]), dim=1)
+        timeseries_context_combined = torch.cat((nodes, edges), dim=1)
+
+        ctx_tf_output = self.context_transformer(
+            timeseries_context_combined # timeseries_context[:,0:5,:]
+        ) # [B, 40]
+        """
 
         logits = self.fc1(ctx_tf_output)
 
@@ -324,7 +349,7 @@ def load_pretrained_graph_transformer(dataset_name: str,
             encoder_input_size=5, seq_len=75, hyperparams={})
     
     config_for_context_timeseries = get_config_for_context_timeseries(
-        encoder_input_size=2, seq_len=15, hyperparams={})
+        encoder_input_size=2, seq_len=30, hyperparams={})
 
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]

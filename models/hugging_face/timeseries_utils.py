@@ -183,6 +183,7 @@ class TorchTimeseriesDataset(Dataset):
 
         self.video_data = False
         self.context_image = False
+        self.video_context = False
         self.video_embeddings = False
         self.segm_map, self.segm_map2 = "", ""
         self.model_type = ""
@@ -192,7 +193,23 @@ class TorchTimeseriesDataset(Dataset):
         self.context_image = False
         self.previous_context_image = False
 
-        if len(self.data.input_type_list) == 2: # TODO: recode this in a better way
+        # Verify if we should get video data
+        if len(self.data[0][0]) > 1 and not ignore_sem_map and not \
+            self.model_type.startswith("TrajectoryTransformerV3") and not \
+                self.model_type == "VanMultiscale":
+            self.video_data = True
+        elif self.video_embeddings:
+            self.video_data = True
+
+        if "scene_video_with_segmentation_v0" in self.data.input_type_list:
+            self.timeseries_context = "scene_graph" in self.data.input_type_list[1]
+            self.video_data = False
+            self.video_context = True
+        elif "scene_graph" in self.data.input_type_list and "scene_graph_doubled" in self.data.input_type_list:
+            self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
+            self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
+            self.video_data = False
+        elif len(self.data.input_type_list) == 2: # TODO: recode this in a better way
             self.context_image = True
             self.model_type = "TrajectoryTransformerV3"
         elif len(self.data.input_type_list) == 3:
@@ -212,13 +229,6 @@ class TorchTimeseriesDataset(Dataset):
             self.previous_context_image = "scene_context" in self.data.input_type_list[5] # "scene_context_previous" in self.data.input_type_list[5]
             self.segm_map = "scene_context_with_segmentation_v0" in self.data.input_type_list[0] 
             self.segm_map2 = "scene_context_with_segmentation_v3" in self.data.input_type_list[7]
-
-        if len(self.data[0][0]) > 1 and not ignore_sem_map and not \
-            self.model_type.startswith("TrajectoryTransformerV3") and not \
-                self.model_type == "VanMultiscale":
-            self.video_data = True
-        elif self.video_embeddings:
-            self.video_data = True
 
         self.data_type = data_type
         self.img_transform = img_transform
@@ -342,6 +352,8 @@ class TorchTimeseriesDataset(Dataset):
         obs_input_type_index = 2
         #if self.timeseries_double_context:
         #    obs_input_type_index = 3
+        if self.video_context:
+            obs_input_type_index = 1
         context_item = np.asarray(item[obs_input_type_index])
 
         context_item = np.squeeze(context_item) 

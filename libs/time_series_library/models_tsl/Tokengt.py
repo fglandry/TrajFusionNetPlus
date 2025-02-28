@@ -223,6 +223,23 @@ EDGE_NODE_VALS = {
         "node_num": 8,
         "edge_num": 7
     },
+    "scene_graph_combined": {
+        "edge_indices": [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4],
+                        [5, 5], [6, 6], [7, 7], # scene_graph_nodes
+                        [8, 8], [9, 9], [10, 10], [11, 11], [12, 12],
+                        [13, 13], [14, 14], [15, 15], # scene_graph_nodes_2
+                        [16, 16], [17, 17], [18, 18], [19, 19], [20, 20],
+                        [21, 21], [22, 22], [23, 23], # scene_graph_nodes_3   
+                        [0, 1], [0, 2],
+                        [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], # scene_graph_edges
+                        [8, 9], [8, 10],
+                        [8, 11], [8, 12], [8, 13], [8, 14], [8, 15], # scene_graph_edges_2
+                        [16, 17], [16, 18],
+                        [16, 19], [16, 20], [16, 21], [16, 22], [16, 23] # scene_graph_edges_2
+                        ],
+        "node_num": 24,
+        "edge_num": 21
+    },
     "pedestrian_graph": {
         "edge_indices": [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], 
                         [5, 5], [6, 6], [7, 7], [0, 1], [1, 3], 
@@ -310,7 +327,7 @@ class LaplacianEmbedding(nn.Module):
         self.config = config
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.dim_hidden = d_model
-        self.lap_node_id_dim = 42
+        self.lap_node_id_dim = 48
         self.laplacian_encoder = nn.Linear(self.lap_node_id_dim, self.dim_hidden)
 
         graph_type = _get_graph_type_from_config(config)
@@ -343,7 +360,7 @@ def _get_graph_type_from_config(config):
         elif config.graph_type == "combined_graph":
             graph_type = "combined_graph_2"
         elif config.graph_type == "scene_graph":
-            graph_type = "scene_graph_2"
+            graph_type = "scene_graph_combined" # TODO: change
     else:
         graph_type = "scene_graph"
     return graph_type

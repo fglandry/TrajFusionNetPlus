@@ -30,7 +30,7 @@ def get_semantic_segmentation(img_features: np.ndarray,
             if feature_type == 'ped_scene_segmentation':
                 mask = get_pedestrian_segmentation_mask(b, img_data, output, crop_mode, 
                                                         target_dim, SEGFORMER_MODEL)
-            elif 'scene_context_with_segmentation' in feature_type:
+            elif 'scene_context_with_segmentation' in feature_type or 'scene_video_with_segmentation' in feature_type:
                 mask = add_segmentation_map_to_img_features(SEGFORMER_MODEL, img_features, output, 
                                                             feature_type, class_idx_tsr, image)
                 #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/sem_output_{str(time.time()).replace('.', '_')}.png", mask[..., 0:3])
