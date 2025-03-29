@@ -11,6 +11,7 @@ from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransfor
 from libs.time_series_library.models_tsl.Transformer import Model as VanillaTransformerTSLModel
 from models.custom_layers_pytorch import CrossAttention
 from models.hugging_face.model_trainers.trajectorytransformer import load_pretrained_trajectory_transformer
+from models.hugging_face.model_trainers.trajectorytransformerb import load_pretrained_encoder_transformer
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
@@ -64,10 +65,12 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
         timeseries_element = data_train['data'][0][0][0][-1]
         timeseries_context_element = data_train['data'][0][0][0][2]
         encoder_input_size = timeseries_element.shape[-1]
-        context_len = 45 # timeseries_context_element.shape[-2]
+        context_len = 15 # timeseries_context_element.shape[-2]
+        seq_len = 15
         config_for_context_timeseries = get_config_for_context_timeseries(
             encoder_input_size, context_len, hyperparams)
         
+        encoder_input_size = 512-1
         config_for_timeseries_lib = get_config_for_timeseries_lib(
             encoder_input_size, seq_len, hyperparams)
         config_for_huggingface = TimeSeriesTransformerConfig()
@@ -93,6 +96,10 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
             remove_unused_columns=False,
             evaluation_strategy="epoch",
             save_strategy="epoch",
+            #evaluation_strategy="steps",
+            #save_strategy="steps",
+            #eval_steps=100,
+            #save_steps=100,
             learning_rate=lr,
             per_device_train_batch_size=batch_size, 
             per_device_eval_batch_size=batch_size,
@@ -179,12 +186,15 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         self.context_transformer = EncoderTransformer(
             config_for_huggingface, config_for_context_timeseries)
 
-        classifier_hidden_size = 512 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
+        classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
         self.classifier = nn.Linear(
             classifier_hidden_size, config_for_huggingface.num_labels) \
             if config_for_huggingface.num_labels > 0 else nn.Identity()
 
         self.fc1 = nn.Linear(classifier_hidden_size, self.num_labels) # [40, 2]
+
+        self.tsl_transformer = VanillaTransformerTSLModel(config_for_timeseries_lib)
+        
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -212,22 +222,91 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         assert output_hidden_states is None
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
+        
         # Apply "Graph" Transformer to scene graph data
-        last_timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
-        first_timeseries_context = timeseries_context[:,0,:,:]
-        middle_timeseries_context = timeseries_context[:,8,:,:]
+        # last_timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
+        # first_timeseries_context = timeseries_context[:,0,:,:]
+        # middle_timeseries_context = timeseries_context[:,8,:,:]
 
-        nodes = torch.cat((first_timeseries_context[:,0:8,:],
-                           middle_timeseries_context[:,0:8,:],
-                           last_timeseries_context[:,0:8,:]), dim=1)
-        edges = torch.cat((first_timeseries_context[:,8:,:],
-                           middle_timeseries_context[:,8:,:], 
-                           last_timeseries_context[:,8:,:]), dim=1)
+        """
+        nodes = torch.cat((timeseries_context[:,0,:,:][:,0:8,:],
+                           timeseries_context[:,1,:,:][:,0:8,:],
+                           timeseries_context[:,2,:,:][:,0:8,:],
+                           timeseries_context[:,3,:,:][:,0:8,:],
+                           timeseries_context[:,4,:,:][:,0:8,:],
+                           timeseries_context[:,5,:,:][:,0:8,:],
+                           timeseries_context[:,6,:,:][:,0:8,:],
+                           timeseries_context[:,7,:,:][:,0:8,:],
+                           timeseries_context[:,8,:,:][:,0:8,:],
+                           timeseries_context[:,9,:,:][:,0:8,:],
+                           timeseries_context[:,10,:,:][:,0:8,:],
+                           timeseries_context[:,11,:,:][:,0:8,:],
+                           timeseries_context[:,12,:,:][:,0:8,:],
+                           timeseries_context[:,13,:,:][:,0:8,:],
+                           timeseries_context[:,14,:,:][:,0:8,:]
+                        ), dim=1)
+        edges = torch.cat((timeseries_context[:,0,:,:][:,8:,:],
+                           timeseries_context[:,1,:,:][:,8:,:],
+                           timeseries_context[:,2,:,:][:,8:,:],
+                           timeseries_context[:,3,:,:][:,8:,:],
+                           timeseries_context[:,4,:,:][:,8:,:],
+                           timeseries_context[:,5,:,:][:,8:,:],
+                           timeseries_context[:,6,:,:][:,8:,:],
+                           timeseries_context[:,7,:,:][:,8:,:],
+                           timeseries_context[:,8,:,:][:,8:,:],
+                           timeseries_context[:,9,:,:][:,8:,:],
+                           timeseries_context[:,10,:,:][:,8:,:],
+                           timeseries_context[:,11,:,:][:,8:,:],
+                           timeseries_context[:,12,:,:][:,8:,:],
+                           timeseries_context[:,13,:,:][:,8:,:],
+                           timeseries_context[:,14,:,:][:,8:,:]
+                        ), dim=1)
+        
         timeseries_context_combined = torch.cat((nodes, edges), dim=1)
-
+        
         ctx_tf_output = self.context_transformer(
             timeseries_context_combined # timeseries_context[:,0:5,:]
         ) # [B, 40]
+        """
+
+        ctx_tf_output_0 = self.context_transformer(timeseries_context[:,0,:,:])
+        ctx_tf_output_1 = self.context_transformer(timeseries_context[:,1,:,:])
+        ctx_tf_output_2 = self.context_transformer(timeseries_context[:,2,:,:])
+        ctx_tf_output_3 = self.context_transformer(timeseries_context[:,3,:,:])
+        ctx_tf_output_4 = self.context_transformer(timeseries_context[:,4,:,:])
+        ctx_tf_output_5 = self.context_transformer(timeseries_context[:,5,:,:])
+        ctx_tf_output_6 = self.context_transformer(timeseries_context[:,6,:,:])
+        ctx_tf_output_7 = self.context_transformer(timeseries_context[:,7,:,:])
+        ctx_tf_output_8 = self.context_transformer(timeseries_context[:,8,:,:])
+        ctx_tf_output_9 = self.context_transformer(timeseries_context[:,9,:,:])
+        ctx_tf_output_10 = self.context_transformer(timeseries_context[:,10,:,:])
+        ctx_tf_output_11 = self.context_transformer(timeseries_context[:,11,:,:])
+        ctx_tf_output_12 = self.context_transformer(timeseries_context[:,12,:,:])
+        ctx_tf_output_13 = self.context_transformer(timeseries_context[:,13,:,:])
+        ctx_tf_output_14 = self.context_transformer(timeseries_context[:,14,:,:])
+
+        ctx_tf_output = torch.stack((ctx_tf_output_0,
+                                     ctx_tf_output_1,
+                                     ctx_tf_output_2,
+                                     ctx_tf_output_3,
+                                     ctx_tf_output_4,
+                                     ctx_tf_output_5,
+                                     ctx_tf_output_6,
+                                     ctx_tf_output_7,
+                                     ctx_tf_output_8,
+                                     ctx_tf_output_9,
+                                     ctx_tf_output_10,
+                                     ctx_tf_output_11,
+                                     ctx_tf_output_12,
+                                     ctx_tf_output_13,
+                                     ctx_tf_output_14), dim=1)
+
+        outputs = self.tsl_transformer(
+            x_enc=ctx_tf_output,
+            x_mark_enc=None,
+            x_dec=None,
+            x_mark_dec=None
+        )
         
         """
         # Apply "Graph" Transformer to scene graph data
@@ -243,9 +322,9 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         ) # [B, 40]
         """
 
-        logits = self.fc1(ctx_tf_output)
+        logits = self.fc1(outputs)
 
-        return compute_loss(ctx_tf_output,
+        return compute_loss(outputs,
                             logits,
                             labels,
                             self.config,
@@ -349,7 +428,7 @@ def load_pretrained_graph_transformer(dataset_name: str,
             encoder_input_size=5, seq_len=75, hyperparams={})
     
     config_for_context_timeseries = get_config_for_context_timeseries(
-        encoder_input_size=2, seq_len=30, hyperparams={})
+        encoder_input_size=2, seq_len=45, hyperparams={})
 
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
@@ -359,7 +438,9 @@ def load_pretrained_graph_transformer(dataset_name: str,
             checkpoint = "data/models/pie/GraphTransformer/14Feb2025-23h32m24s_GT3"
         elif dataset_name == "jaad_all":
             #checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
-            checkpoint = "data/models/jaad_all/GraphTransformer/13Feb2025-15h40m43s_GT2"
+            #checkpoint = "data/models/jaad_all/GraphTransformer/13Feb2025-15h40m43s_GT2"
+            checkpoint = "data/models/jaad_all/GraphTransformer/28Feb2025-10h32m36s/checkpoint-32340"
+
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

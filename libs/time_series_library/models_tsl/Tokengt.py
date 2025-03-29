@@ -225,20 +225,68 @@ EDGE_NODE_VALS = {
     },
     "scene_graph_combined": {
         "edge_indices": [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4],
-                        [5, 5], [6, 6], [7, 7], # scene_graph_nodes
+                        [5, 5], [6, 6], [7, 7], # scene_graph_nodes_0
                         [8, 8], [9, 9], [10, 10], [11, 11], [12, 12],
-                        [13, 13], [14, 14], [15, 15], # scene_graph_nodes_2
+                        [13, 13], [14, 14], [15, 15], # scene_graph_nodes_1
                         [16, 16], [17, 17], [18, 18], [19, 19], [20, 20],
-                        [21, 21], [22, 22], [23, 23], # scene_graph_nodes_3   
+                        [21, 21], [22, 22], [23, 23], # scene_graph_nodes_2
+                        [24, 24], [25, 25], [26, 26], [27, 27], [28, 28],
+                        [29, 29], [30, 30], [31, 31], # scene_graph_nodes_3 
+                        [32, 32], [33, 33], [34, 34], [35, 35], [36, 36],
+                        [37, 37], [38, 38], [39, 39], # scene_graph_nodes_4 
+                        [40, 40], [41, 41], [42, 42], [43, 43], [44, 44],
+                        [45, 45], [46, 46], [47, 47], # scene_graph_nodes_5 
+                        [48, 48], [49, 49], [50, 50], [51, 51], [52, 52],
+                        [53, 53], [54, 54], [55, 55], # scene_graph_nodes_6 
+                        [56, 56], [57, 57], [58, 58], [59, 59], [60, 60],
+                        [61, 61], [62, 62], [63, 63], # scene_graph_nodes_7 
+                        [64, 64], [65, 65], [66, 66], [67, 67], [68, 68],
+                        [69, 69], [70, 70], [71, 71], # scene_graph_nodes_8 
+                        [72, 72], [73, 73], [74, 74], [75, 75], [76, 76],
+                        [77, 77], [78, 78], [79, 79], # scene_graph_nodes_9 
+                        [80, 80], [81, 81], [82, 82], [83, 83], [84, 84],
+                        [85, 85], [86, 86], [87, 87], # scene_graph_nodes_10 
+                        [88, 88], [89, 89], [90, 90], [91, 91], [92, 92],
+                        [93, 93], [94, 94], [95, 95], # scene_graph_nodes_11
+                        [96, 96], [97, 97], [98, 98], [99, 99], [100, 100],
+                        [101, 101], [102, 102], [103, 103], # scene_graph_nodes_12 
+                        [104, 104], [105, 105], [106, 106], [107, 107], [108, 108],
+                        [109, 109], [110, 110], [111, 111], # scene_graph_nodes_13 
+                        [112, 112], [113, 113], [114, 114], [115, 115], [116, 116],
+                        [117, 117], [118, 118], [119, 119], # scene_graph_nodes_14    
                         [0, 1], [0, 2],
-                        [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], # scene_graph_edges
+                        [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], # scene_graph_edges_0
                         [8, 9], [8, 10],
-                        [8, 11], [8, 12], [8, 13], [8, 14], [8, 15], # scene_graph_edges_2
+                        [8, 11], [8, 12], [8, 13], [8, 14], [8, 15], # scene_graph_edges_1
                         [16, 17], [16, 18],
-                        [16, 19], [16, 20], [16, 21], [16, 22], [16, 23] # scene_graph_edges_2
+                        [16, 19], [16, 20], [16, 21], [16, 22], [16, 23], # scene_graph_edges_2
+                        [24, 25], [16, 26],
+                        [24, 27], [24, 28], [24, 29], [24, 30], [24, 31], # scene_graph_edges_3
+                        [32, 33], [32, 34],
+                        [32, 35], [32, 36], [32, 37], [32, 38], [32, 39], # scene_graph_edges_4
+                        [40, 41], [40, 42],
+                        [40, 43], [40, 44], [40, 45], [40, 46], [40, 47], # scene_graph_edges_5
+                        [48, 49], [48, 50],
+                        [48, 51], [48, 52], [48, 53], [48, 54], [48, 55], # scene_graph_edges_6
+                        [56, 57], [56, 58],
+                        [56, 59], [56, 60], [56, 61], [56, 62], [56, 63], # scene_graph_edges_7
+                        [64, 65], [64, 66],
+                        [64, 67], [64, 68], [64, 69], [64, 70], [64, 71], # scene_graph_edges_8
+                        [72, 73], [72, 74],
+                        [72, 75], [72, 76], [72, 77], [72, 78], [72, 79], # scene_graph_edges_9
+                        [80, 81], [80, 82],
+                        [80, 83], [80, 84], [80, 85], [80, 86], [80, 87], # scene_graph_edges_10
+                        [88, 89], [88, 90],
+                        [88, 91], [88, 92], [88, 93], [88, 94], [88, 95], # scene_graph_edges_11
+                        [96, 97], [96, 98],
+                        [96, 99], [96, 100], [96, 101], [96, 102], [96, 103], # scene_graph_edges_12
+                        [104, 105], [104, 106],
+                        [104, 107], [104, 108], [104, 109], [104, 110], [104, 111], # scene_graph_edges_13
+                        [112, 113], [112, 114],
+                        [112, 115], [112, 116], [112, 117], [112, 118], [112, 119], # scene_graph_edges_14
                         ],
-        "node_num": 24,
-        "edge_num": 21
+        "node_num": 120,
+        "edge_num": 105
     },
     "pedestrian_graph": {
         "edge_indices": [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], 
@@ -327,7 +375,7 @@ class LaplacianEmbedding(nn.Module):
         self.config = config
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.dim_hidden = d_model
-        self.lap_node_id_dim = 48
+        self.lap_node_id_dim = 48 # TODO: verify
         self.laplacian_encoder = nn.Linear(self.lap_node_id_dim, self.dim_hidden)
 
         graph_type = _get_graph_type_from_config(config)
@@ -360,7 +408,7 @@ def _get_graph_type_from_config(config):
         elif config.graph_type == "combined_graph":
             graph_type = "combined_graph_2"
         elif config.graph_type == "scene_graph":
-            graph_type = "scene_graph_combined" # TODO: change
+            graph_type = "scene_graph_2" # TODO: change
     else:
         graph_type = "scene_graph"
     return graph_type

@@ -4,17 +4,17 @@ model_opts:
   generator: True
   obs_input_type: [scene_video_with_segmentation_v0,
                    scene_graph,
-                   box, veh_speed]
+                   box, normalized_abs_box, veh_speed]
   frameworks:
     pytorch: True
     hugging_faces: True
     multi-gpu: False
   process_input_features:
     enabled: True
-    indexes_to_stack: [2, 3]
+    indexes_to_stack: [2, 3, 4]
     static_features_indexes: []
 exp_opts:
   datasets: [jaad_all]
   batch_size: [16]
-  epochs: [30]
+  epochs: [20]
   lr: [5.0e-06]
