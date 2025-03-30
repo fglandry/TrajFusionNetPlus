@@ -250,8 +250,8 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         # Classifier head parameters
         self.van_output_size = 256
         self.max_classifier_hidden_size = NET_OUTER_DIM
-        self.max_classifier_hidden_size_van = 1280 # 2*NET_INNER_DIM
-        self.fc1_neurons = 2 * self.max_classifier_hidden_size
+        self.max_classifier_hidden_size_van = 1024 # 2*NET_INNER_DIM
+        self.fc1_neurons = 3 * self.max_classifier_hidden_size
         self.fc2_neurons = NET_OUTER_DIM
         
         # Get pretrained VAN Models -------------------------------------------
@@ -261,7 +261,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
             add_classification_head=False,
             submodels_paths=submodels_paths)
 
-        self.van2 = load_pretrained_vit( # observed ped overlays
+        self.van2 = load_pretrained_van( # load_pretrained_vit( # observed ped overlays
             dataset_name,
             is_predicted_overlays=False,
             add_classification_head=False,
@@ -272,12 +272,12 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
                                                                  add_classification_head=False,
                                                                  submodels_paths=submodels_paths)
         
-        """
+
         self.context_transformer = load_pretrained_graph_transformer(
             dataset_name,
             add_classification_head=False,
             submodels_paths=None) # TODO: reset to submodels_paths=submodels_paths
-        """
+        
 
         # Classifier layers
         if self.combine_branches_with_attention:
@@ -285,7 +285,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         if self.combine_vans_with_attention:
             self.self_attention_van = SelfAttention(self.max_classifier_hidden_size_van)
         self.van_output_embed = nn.Linear(self.max_classifier_hidden_size_van, NET_OUTER_DIM)
-        self.ctx_tf_output_embed = nn.Linear(self.max_classifier_hidden_size_van, NET_OUTER_DIM)
+        self.ctx_tf_output_embed = nn.Linear(40, NET_OUTER_DIM)
         self.dropout = nn.Dropout(p=DROPOUT)
         self.fc1 = nn.Linear(self.fc1_neurons, self.fc2_neurons)
         self.fc2 = nn.Linear(self.fc2_neurons, self.num_labels)
@@ -338,14 +338,13 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         
         # van_output_cat = self.van_output_embed(van_output) # shape=[batch, 40]
 
-        """    
+           
         # Apply "Graph" Transformer to scene graph data
-        timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
         ctx_tf_output = self.context_transformer(
-            timeseries_context[:,:,:] # timeseries_context[:,0:5,:]
+            timeseries_context=timeseries_context
         ) # [B, 40]
         ctx_tf_output = self.ctx_tf_output_embed(ctx_tf_output)
-        """
+        
         
         # Apply Encoder TF to trajectory values =============================================
 
@@ -363,7 +362,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
             x = self._concatenate_with_attention(self.self_attention, 
                     original_x, tuple_to_concat, self.max_classifier_hidden_size)
         else:
-            tuple_to_concat = [outputs_pred, van_output_cat]
+            tuple_to_concat = [outputs_pred, van_output_cat, ctx_tf_output]
             x = torch.cat(tuple_to_concat, dim=1) # shape=[batch, 80]
 
         # Apply fully-connected layers
@@ -442,6 +441,7 @@ def load_pretrained_trajfusionnet(dataset_name: str):
         # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/17Feb2025-15h18m22s/checkpoint-16170"
         # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-16170"
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-12397"
+        checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/30Mar2025-11h40m50s_TFG4/checkpoint-14553"
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         

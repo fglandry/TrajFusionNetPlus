@@ -76,7 +76,7 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
         config_for_huggingface = TimeSeriesTransformerConfig()
         self.num_labels = config_for_huggingface.num_labels
 
-        model = EncoderTransformerForClassification(
+        model = GraphEncoderTransformerForClassification(
             config_for_huggingface, config_for_timeseries_lib,
             config_for_context_timeseries=config_for_context_timeseries,
             dataset_name=kwargs["model_opts"]["dataset_full"],
@@ -94,12 +94,12 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
         args = TrainingArguments(
             output_dir=model_path,
             remove_unused_columns=False,
-            evaluation_strategy="epoch",
-            save_strategy="epoch",
-            #evaluation_strategy="steps",
-            #save_strategy="steps",
-            #eval_steps=100,
-            #save_steps=100,
+            #evaluation_strategy="epoch",
+            #save_strategy="epoch",
+            evaluation_strategy="steps",
+            save_strategy="steps",
+            eval_steps=100,
+            save_steps=100,
             learning_rate=lr,
             per_device_train_batch_size=batch_size, 
             per_device_eval_batch_size=batch_size,
@@ -164,7 +164,71 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
         )
 
 
-class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
+class GraphEncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
+    def __init__(self,
+                 config_for_huggingface: TimeSeriesTransformerConfig,
+                 config_for_timeseries_lib: dict = None,
+                 dataset_name: str = None,
+                 model_opts: dict = None,
+                 config_for_context_timeseries = None
+        ):
+        super().__init__(config_for_huggingface, config_for_timeseries_lib)
+        self.num_labels = config_for_huggingface.num_labels
+
+        classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
+        
+        self.graph_tf = GraphEncoderTransformer(
+            config_for_huggingface,
+            config_for_timeseries_lib,
+            config_for_context_timeseries=config_for_context_timeseries
+        )
+
+        self.fc1 = nn.Linear(classifier_hidden_size, self.num_labels) # [40, 2]
+        
+        # Initialize weights and apply final processing
+        self.post_init()
+
+    def forward(
+        self,
+        trajectory_values: torch.Tensor = None,
+        timeseries_context: Optional[torch.Tensor] = None,
+        previous_timeseries_context: Optional[torch.Tensor] = None,
+        # normalized_trajectory_values: torch.Tensor = None,
+        labels: torch.Tensor = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        *args, **kwargs
+    ):
+        """ Args:
+        trajectory_values [torch.Tensor]: non-normalized observed trajectory values
+            of shape [batch, seq_len, enc]
+        normalized_trajectory_values [torch.Tensor]: normalized observed trajectory values
+            of shape [batch, seq_len, enc]
+        labels [torch.Tensor]: future target trajectory values of shape [batch, pred_len, enc]
+            (between time t=0 and time t=60)
+        """
+
+        assert output_hidden_states is None
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        outputs = self.graph_tf(
+            timeseries_context=timeseries_context
+        )
+
+        logits = self.fc1(outputs)
+
+        return compute_loss(outputs,
+                            logits,
+                            labels,
+                            self.config,
+                            self.num_labels,
+                            return_dict)
+    
+
+class GraphEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
+
+    base_model_prefix = "graph_tf"
+    
     def __init__(self,
                  config_for_huggingface: TimeSeriesTransformerConfig,
                  config_for_timeseries_lib: dict = None,
@@ -190,8 +254,6 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         self.classifier = nn.Linear(
             classifier_hidden_size, config_for_huggingface.num_labels) \
             if config_for_huggingface.num_labels > 0 else nn.Identity()
-
-        self.fc1 = nn.Linear(classifier_hidden_size, self.num_labels) # [40, 2]
 
         self.tsl_transformer = VanillaTransformerTSLModel(config_for_timeseries_lib)
         
@@ -322,14 +384,7 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         ) # [B, 40]
         """
 
-        logits = self.fc1(outputs)
-
-        return compute_loss(outputs,
-                            logits,
-                            labels,
-                            self.config,
-                            self.num_labels,
-                            return_dict)
+        return outputs
 
 
 class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
@@ -425,10 +480,10 @@ def load_pretrained_graph_transformer(dataset_name: str,
                                         add_classification_head: bool = True,
                                         submodels_paths: dict = None):
     config_for_encoder_tf = get_config_for_timeseries_lib(
-            encoder_input_size=5, seq_len=75, hyperparams={})
+            encoder_input_size=512-1, seq_len=15, hyperparams={})
     
     config_for_context_timeseries = get_config_for_context_timeseries(
-        encoder_input_size=2, seq_len=45, hyperparams={})
+        encoder_input_size=512-1, seq_len=15, hyperparams={})
 
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
@@ -439,22 +494,24 @@ def load_pretrained_graph_transformer(dataset_name: str,
         elif dataset_name == "jaad_all":
             #checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
             #checkpoint = "data/models/jaad_all/GraphTransformer/13Feb2025-15h40m43s_GT2"
-            checkpoint = "data/models/jaad_all/GraphTransformer/28Feb2025-10h32m36s/checkpoint-32340"
+            #checkpoint = "data/models/jaad_all/GraphTransformer/28Feb2025-10h32m36s/checkpoint-32340"
+            checkpoint = "data/models/jaad_all/GraphTransformer/29Mar2025-18h53m18s_GT3"
 
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 
     if add_classification_head:
-        pretrained_model = EncoderTransformerForClassification.from_pretrained(
+        pretrained_model = GraphEncoderTransformerForClassification.from_pretrained(
             checkpoint,
             config_for_timeseries_lib=config_for_encoder_tf,
             config_for_context_timeseries=config_for_context_timeseries,
             ignore_mismatched_sizes=True,
             dataset_name=dataset_name)
     else:
-        pretrained_model = EncoderTransformer.from_pretrained(
+        pretrained_model = GraphEncoderTransformer.from_pretrained(
             checkpoint,
-            config_for_timeseries_lib=config_for_context_timeseries,
+            config_for_timeseries_lib=config_for_encoder_tf,
+            config_for_context_timeseries=config_for_context_timeseries,
             ignore_mismatched_sizes=True,
             #dataset_name=dataset_name,
             #submodels_paths=submodels_paths)

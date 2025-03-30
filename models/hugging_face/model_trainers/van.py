@@ -249,7 +249,7 @@ def load_pretrained_van(dataset_name: str,
             #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-10780"
             #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-5390"
             #checkpoint2 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s"
-            checkpoint1 = "data/models/jaad_all/VAN/21Feb2025-13h01m53s/checkpoint-2156"
+            #checkpoint1 = "data/models/jaad_all/VAN/21Feb2025-13h01m53s/checkpoint-2156"
 
         elif dataset_name == "jaad_beh":
             checkpoint1 = "data/models/jaad_beh/VAN/weights_van1_jaadbeh"

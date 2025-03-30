@@ -64,7 +64,8 @@ def get_scene_graph(data, processed_data, model_opts,
 
     features = []
 
-    scene_type = "scene_graph_doubled" if get_previous_scene_graph else "scene_graph"
+    # scene_type = "scene_graph_doubled" if get_previous_scene_graph else "scene_graph"
+    scene_type = "scene_graph" if get_previous_scene_graph else "scene_graph" # TODO: this is a temporary workaround
     path_to_features, _ = get_path(save_folder=scene_type,
                                dataset=model_opts["dataset_full"],
                                save_root_folder='data/features')

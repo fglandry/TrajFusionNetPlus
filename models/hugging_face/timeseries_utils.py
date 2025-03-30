@@ -201,7 +201,14 @@ class TorchTimeseriesDataset(Dataset):
         elif self.video_embeddings:
             self.video_data = True
 
-        if "scene_video_with_segmentation_v0" in self.data.input_type_list:
+        if len(self.data.input_type_list) >= 5: # TODO: recode this in a better way
+            self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
+            self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
+            self.context_image = "scene_context" in self.data.input_type_list[4]
+            self.previous_context_image = "scene_context" in self.data.input_type_list[5] # "scene_context_previous" in self.data.input_type_list[5]
+            self.segm_map = "scene_context_with_segmentation_v0" in self.data.input_type_list[0] 
+            self.segm_map2 = "scene_context_with_segmentation_v3" in self.data.input_type_list[7]
+        elif "scene_video_with_segmentation_v0" in self.data.input_type_list:
             self.timeseries_context = "scene_graph" in self.data.input_type_list[1]
             self.video_data = False
             self.video_context = True
@@ -209,7 +216,7 @@ class TorchTimeseriesDataset(Dataset):
             self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
             self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
             self.video_data = False
-        elif len(self.data.input_type_list) == 2: # TODO: recode this in a better way
+        elif len(self.data.input_type_list) == 2:
             self.context_image = True
             self.model_type = "TrajectoryTransformerV3"
         elif len(self.data.input_type_list) == 3:
@@ -222,13 +229,6 @@ class TorchTimeseriesDataset(Dataset):
             self.context_image = True
             self.model_type = "TrajectoryTransformerV3b"
             self.timeseries_context = "scene_graph" in self.data.input_type_list[1]
-        elif len(self.data.input_type_list) >= 5:
-            self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
-            self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
-            self.context_image = "scene_context" in self.data.input_type_list[4]
-            self.previous_context_image = "scene_context" in self.data.input_type_list[5] # "scene_context_previous" in self.data.input_type_list[5]
-            self.segm_map = "scene_context_with_segmentation_v0" in self.data.input_type_list[0] 
-            self.segm_map2 = "scene_context_with_segmentation_v3" in self.data.input_type_list[7]
 
         self.data_type = data_type
         self.img_transform = img_transform
