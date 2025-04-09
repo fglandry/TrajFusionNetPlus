@@ -237,10 +237,16 @@ def load_pretrained_van(dataset_name: str,
         checkpoint2 = submodels_paths["van_prev_path"]
     else:
         label2id, id2label = get_class_labels_info()
-        if dataset_name in ["pie", "combined"]:
+
+        if dataset_name == "combined":
+            checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
+            checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
+        elif dataset_name == "pie":
             checkpoint1 = "data/models/pie/VAN/weights_van1_pie"
             checkpoint2 = "data/models/pie/VAN/weights_van2_pie"
             #checkpoint1 = "data/models/pie/VAN/15Feb2025-10h55m33s_VA12"
+            checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
+            checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
             checkpoint2 = "data/models/jaad_all/VAN/weights_van2_jaadall"
@@ -250,6 +256,8 @@ def load_pretrained_van(dataset_name: str,
             #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-5390"
             #checkpoint2 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s"
             #checkpoint1 = "data/models/jaad_all/VAN/21Feb2025-13h01m53s/checkpoint-2156"
+            checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
+            checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
 
         elif dataset_name == "jaad_beh":
             checkpoint1 = "data/models/jaad_beh/VAN/weights_van1_jaadbeh"

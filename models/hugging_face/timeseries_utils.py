@@ -225,6 +225,7 @@ class TorchTimeseriesDataset(Dataset):
                 or "local_context" in self.data.input_type_list[1]:
                 self.previous_context_image = True
             self.model_type = "VanMultiscale"
+            self.video_data = False # TODO: verify
         elif len(self.data.input_type_list) == 4:
             self.context_image = True
             self.model_type = "TrajectoryTransformerV3b"

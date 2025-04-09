@@ -134,7 +134,7 @@ class DataGenerator(Sequence):
         self.process = process
         self.global_pooling = global_pooling
         self.input_type_list = input_type_list
-        self.batch_size = 1 if len(self.labels) < batch_size else batch_size        
+        self.batch_size = 1 if len(self.labels) < batch_size else batch_size     
         self.data_sizes = data_sizes
         self.shuffle = shuffle
         self.to_fit = to_fit

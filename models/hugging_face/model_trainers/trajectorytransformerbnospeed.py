@@ -284,10 +284,15 @@ def load_pretrained_encoder_transformer(dataset_name: str,
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
     else:
-        if dataset_name in ["pie", "combined"]:
+        if dataset_name == "combined":
             checkpoint = "data/models/pie/TrajectoryTransformerbNoSpeed/15Feb2025-21h44m52s_NS1"
+            checkpoint = "data/models/combined/TrajectoryTransformerbNoSpeed/30Mar2025-22h04m45s_CO2" # combined
+        elif dataset_name == "pie":
+            #checkpoint = "data/models/pie/TrajectoryTransformerbNoSpeed/15Feb2025-21h44m52s_NS1"
+            checkpoint = "data/models/combined/TrajectoryTransformerbNoSpeed/30Mar2025-22h04m45s_CO2" # combined
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
+            #checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
+            checkpoint = "data/models/combined/TrajectoryTransformerbNoSpeed/30Mar2025-22h04m45s_CO2" # combined
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

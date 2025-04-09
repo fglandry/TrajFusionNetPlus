@@ -122,7 +122,7 @@ def _calculate_stats_for_img_like_data(data_type: str, means: dict,
 
 def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray, 
                                         dataset_statistics: dict, model_opts: dict,
-                                        include_labels: bool = True,
+                                        include_labels: bool = False,
                                         use_precomputed_values: bool = False):
     
     if use_precomputed_values:
@@ -132,10 +132,10 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
         # Here, statistics include labels (pred_len=60)
         if model_opts["dataset_full"] == "jaad_all":
             
-            dataset_statistics["dataset_means"]["trajectory"] = [-7.817597278751057, -2.797630704496746, 0.7966554592107592, 15.765265538056195, 0.46580601126806626] # 0.5881889890930191, 0.49563012446195803, 0.7114383036465168, 2.7137792721052323]
-            dataset_statistics["dataset_std_devs"]["trajectory"] = [161.24783689412033, 14.863155394437634, 161.40917654572766, 29.585598109148503, 0.2441041362407904] # 0.05964588498939262, 0.24599167728011406, 0.095895595316637, 1.350200146298904]
-            dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 126.0, 1864.0, 350.0, 0.9979166666666667] # 0.7694444444444445, 0.9994791666666667, 0.9990740740740741, 4.0
-            dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -189.0, -1655.0, -120.0, 0.0] # 0.31203703703703706, 0.0078125, 0.4546296296296296, 0.0
+            dataset_statistics["dataset_means"]["trajectory"] = [-7.817597278751057, -2.797630704496746, 0.7966554592107592, 15.765265538056195] # 0.46580601126806626] # 0.5881889890930191, 0.49563012446195803, 0.7114383036465168, 2.7137792721052323]
+            dataset_statistics["dataset_std_devs"]["trajectory"] = [161.24783689412033, 14.863155394437634, 161.40917654572766, 29.585598109148503] # 0.2441041362407904] # 0.05964588498939262, 0.24599167728011406, 0.095895595316637, 1.350200146298904]
+            dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 126.0, 1864.0, 350.0] # 0.9979166666666667] # 0.7694444444444445, 0.9994791666666667, 0.9990740740740741, 4.0
+            dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -189.0, -1655.0, -120.0] # 0.0] # 0.31203703703703706, 0.0078125, 0.4546296296296296, 0.0
         
         elif model_opts["dataset_full"] == "jaad_beh":
 
@@ -146,10 +146,23 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
         
         elif model_opts["dataset_full"] == "pie":
 
-            dataset_statistics["dataset_means"]["trajectory"] = [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626, 6.55515245931165] # [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626, 6.55515245931165]
-            dataset_statistics["dataset_std_devs"]["trajectory"] = [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553, 9.758136061619542] # [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553, 9.758136061619542]
-            dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 54.00958464000001] # [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 54.00958464000001]
-            dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0] # [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0]
+            dataset_statistics["dataset_means"]["trajectory"] = [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626] # 6.55515245931165] # [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626, 6.55515245931165]
+            dataset_statistics["dataset_std_devs"]["trajectory"] = [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553] # 9.758136061619542] # [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553, 9.758136061619542]
+            dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995] # 54.00958464000001] # [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 54.00958464000001]
+            dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002] # 0.0] # [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0]
+
+        elif model_opts["dataset_full"] == "combined":
+
+            dataset_statistics["dataset_means"]["trajectory"] = [-2.3904858567951655, -3.5280755481445425, 3.418520166310761, 11.067645944221596] #, 5.541632936654937]
+            dataset_statistics["dataset_std_devs"]["trajectory"] = [142.47869284250606, 15.787625933538196, 143.5664739120694, 25.60335049534862] #, 8.578877125881265]
+            dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 221.32, 1864.0, 350.0] #, 54.00958464000001]
+            dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -407.0899999999999, -1655.0, -217.10000000000002] #, 0.0]
+
+        # TODO: remove!
+        dataset_statistics["dataset_means"]["trajectory"] = [-2.3904858567951655, -3.5280755481445425, 3.418520166310761, 11.067645944221596, 0.502492821733635, 0.6184464307559171, 0.5294962058200839, 0.7480786399767108]
+        dataset_statistics["dataset_std_devs"]["trajectory"] = [142.47869284250606, 15.787625933538196, 143.5664739120694, 25.60335049534862, 0.2550084784942438, 0.05724863241599671, 0.25714643800928577, 0.08272002051701847]
+        dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 221.32, 1864.0, 350.0, 0.9825260416666667, 0.7833055555555556, 1.0, 1.0]
+        dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -407.0899999999999, -1655.0, -217.10000000000002, 0.0, 0.3527777777777778, 0.006427083333333333, 0.4842592592592593]
 
     else: # compute statistics
         traj_np = []
@@ -178,6 +191,8 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
         dataset_statistics["dataset_maxs"], dataset_statistics["dataset_mins"] = {}, {}
         dataset_statistics["dataset_maxs"]["trajectory"] = list(maxs)
         dataset_statistics["dataset_mins"]["trajectory"] = list(mins)
+
+        test = 10
 
 
 def _format_img(img: np.ndarray):

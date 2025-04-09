@@ -488,7 +488,9 @@ def load_pretrained_graph_transformer(dataset_name: str,
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
     else:
-        if dataset_name in ["pie", "combined"]:
+        if dataset_name == "combined":
+            checkpoint = "data/models/combined/GraphTransformer/09Apr2025-16h37m56s_CO9"
+        if dataset_name in "pie":
             #checkpoint = "data/models/pie/TrajectoryTransformerb/weights_trajectorytransformerb_pie"
             checkpoint = "data/models/pie/GraphTransformer/14Feb2025-23h32m24s_GT3"
         elif dataset_name == "jaad_all":

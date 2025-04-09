@@ -638,8 +638,10 @@ class ActionPredict(object):
                         d[k][i] = [c + box_center_speed[idx][0] + speed_vals[idx] for idx, c in enumerate(d[k][i])]
                     else:
                         d[k][i] = np.subtract(box_rel_coords, d["box_org"][i][0]).tolist()
-                        d[k][i] = [c + speed_vals[idx] for idx, c in enumerate(d[k][i])]
-                        # d[k][i] = [c for idx, c in enumerate(d[k][i])]
+                        if "speed" in opts["obs_input_type"] or "veh_speed" in opts["obs_input_type"]:
+                            d[k][i] = [c + speed_vals[idx] for idx, c in enumerate(d[k][i])]
+                        else:
+                            d[k][i] = [c for idx, c in enumerate(d[k][i])]
             elif (k == 'box' and normalization_type == "relative_subtract") \
                 or k == 'center':
                 for i in range(len(d[k])):

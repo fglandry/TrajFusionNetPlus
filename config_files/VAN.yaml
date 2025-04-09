@@ -1,6 +1,6 @@
 model_opts:
   model: VAN
-  obs_input_type: [scene_context_with_ped_overlays_combined]
+  obs_input_type: [scene_context_with_ped_overlays]
   apply_class_weights: True
   generator: True
   frameworks:
@@ -11,7 +11,7 @@ model_opts:
     enabled: True
     static_features_indexes: [0]
 exp_opts:
-  datasets: [jaad_all]
+  datasets: [combined]
   batch_size: [16]
-  epochs: [20]
+  epochs: [15]
   lr: [5.0e-05]

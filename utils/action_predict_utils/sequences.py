@@ -66,7 +66,7 @@ def combine_beh_seq(beh_seq_jaad, beh_seq_pie):
             beh_seq[k] = beh_seq_jaad[k] + beh_seq_pie[k]
 
     # Add speed # todo revisit
-    # beh_seq['obd_speed'] = beh_seq_jaad['vehicle_act'] + beh_seq_pie['obd_speed']
+    beh_seq['obd_speed'] = beh_seq_jaad['vehicle_act'] + beh_seq_pie['obd_speed']
 
     return beh_seq
 

@@ -405,7 +405,9 @@ def train_submodels(dataset: str,
     return submodels_paths
 
 def load_pretrained_trajfusionnet(dataset_name: str):
-    if dataset_name in ["pie", "combined"]:
+    if dataset_name == "combined":
+        checkpoint = "data/models/combined/TrajFusionNet/02Apr2025-09h43m30s"
+    if dataset_name == "pie":
         checkpoint = "data/models/pie/TrajFusionNet/weights_trajfusionnet_pie"
     elif dataset_name == "jaad_all":
         checkpoint = "data/models/jaad_all/TrajFusionNet/weights_trajfusionnet_jaadall"

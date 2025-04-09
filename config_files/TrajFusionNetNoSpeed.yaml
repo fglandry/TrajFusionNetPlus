@@ -14,7 +14,7 @@ model_opts:
     indexes_to_stack: []
     static_features_indexes: []
 exp_opts:
-  datasets: [pie]
+  datasets: [combined]
   batch_size: [16]
   epochs: [30]
   lr: [5.0e-06]

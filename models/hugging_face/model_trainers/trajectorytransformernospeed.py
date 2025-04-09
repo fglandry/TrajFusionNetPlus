@@ -173,7 +173,7 @@ class VanillaTransformerForForecast(TimeSeriesTransformerPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         normalized_trajectory_values = normalized_trajectory_values[:,:,:4] # remove speed from input data (if present)
-        labels = labels[:,:,:4] if labels else labels
+        labels = labels[:,:,:4] if labels is not None else labels
 
         # Create tensor of size [batch, seq_len+pred_len, enc] with trajectory values
         # between time t = -seq_len and t = 0, and zeros between time t=0 and time t=pred_len
@@ -244,10 +244,14 @@ def load_pretrained_trajectory_transformer(dataset_name: str,
     elif submodels_paths:
         checkpoint = submodels_paths["traj_tf_path"]
     else:
-        if dataset_name in ["pie", "combined"]:
+        if dataset_name == "combined":
+            #checkpoint = "data/models/combined/TrajectoryTransformerNoSpeed/30Mar2025-18h34m03s_CO1"
+            checkpoint = "data/models/pie/TrajectoryTransformerNoSpeed/15Feb2025-20h03m25s_SPI5"
+        if dataset_name == "pie":
             checkpoint = "data/models/pie/TrajectoryTransformerNoSpeed/15Feb2025-20h03m25s_SPI5"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
+            #checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
+            checkpoint = "data/models/pie/TrajectoryTransformerNoSpeed/15Feb2025-20h03m25s_SPI5"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
 

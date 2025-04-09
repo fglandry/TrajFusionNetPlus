@@ -152,8 +152,6 @@ class TrajFusionNetNoSpeed(HuggingFaceTimeSeriesModel):
             if trainer.state.best_metric > best_metric:
                 best_trainer = trainer
                 best_metric = trainer.state.best_metric
-
-        return best_trainer
         
         # Run second part of training procedure with the VAM branch re-enabled       
         optimizer, lr_scheduler = get_optimizer(self, model, args, 
@@ -407,11 +405,15 @@ def train_submodels(dataset: str,
     return submodels_paths
 
 def load_pretrained_trajfusionnet(dataset_name: str):
-    if dataset_name in ["pie", "combined"]:
+    if dataset_name == "combined":
+        checkpoint = "data/models/combined/TrajFusionNetNoSpeed/05Apr2025-19h48m20s_CO8"
+    elif dataset_name == "pie":
         #checkpoint = "data/models/pie/TrajFusionNet/weights_trajfusionnet_pie"
         checkpoint = "data/models/pie/TrajFusionNetNoSpeed/16Feb2025-10h04m00s_NS1"
+        checkpoint = "data/models/combined/TrajFusionNetNoSpeed/05Apr2025-19h48m20s_CO8"
     elif dataset_name == "jaad_all":
         checkpoint = "data/models/jaad_all/TrajFusionNet/weights_trajfusionnet_jaadall"
+        checkpoint = "data/models/combined/TrajFusionNetNoSpeed/05Apr2025-19h48m20s_CO8"
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         
