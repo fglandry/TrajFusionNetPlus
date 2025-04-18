@@ -183,7 +183,8 @@ class TorchTimeseriesDataset(Dataset):
 
         self.video_data = False
         self.context_image = False
-        self.video_context = False
+        self.scene_video_with_segmentation = False
+        self.video_sequential_context = False
         self.video_embeddings = False
         self.segm_map, self.segm_map2 = "", ""
         self.model_type = ""
@@ -205,11 +206,14 @@ class TorchTimeseriesDataset(Dataset):
         if "scene_video_with_segmentation_v0" in self.data.input_type_list:
             self.timeseries_context = "scene_graph" in self.data.input_type_list[1]
             self.video_data = False
-            self.video_context = True
+            self.scene_video_with_segmentation = True
             if "scene_context" in self.data.input_type_list[2]:
                 self.model_type = "TrajFusionNetGraphV1NoSpeed"
                 self.context_image = "scene_context" in self.data.input_type_list[2]
                 self.previous_context_image = "scene_context" in self.data.input_type_list[3]
+        elif "scene_video" in self.data.input_type_list[0]:
+            self.video_sequential_context = True
+            self.video_data = False
         elif "scene_graph" in self.data.input_type_list and "scene_graph_doubled" in self.data.input_type_list:
             self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
             self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
@@ -276,6 +280,8 @@ class TorchTimeseriesDataset(Dataset):
         # Get timeseries context item
         if self.timeseries_context:
             timeseries_context_item = self._get_timeseries_context_item(index)
+        if self.video_sequential_context:
+            timeseries_context_item = self._get_video_sequential_context_item(index)
 
         # Get image context item
         if self.context_image:
@@ -292,7 +298,7 @@ class TorchTimeseriesDataset(Dataset):
 
         if self.video_data:
             item.update(video_item)
-        if self.timeseries_context:
+        if self.timeseries_context or self.video_sequential_context:
             item.update(timeseries_context_item)
         if self.context_image:
             item.update(context_image_item)
@@ -358,7 +364,7 @@ class TorchTimeseriesDataset(Dataset):
         obs_input_type_index = 2
         #if self.timeseries_double_context:
         #    obs_input_type_index = 3
-        if self.video_context:
+        if self.scene_video_with_segmentation:
             obs_input_type_index = 1
         context_item = np.asarray(item[obs_input_type_index])
 
@@ -483,6 +489,31 @@ class TorchTimeseriesDataset(Dataset):
             }
 
         return image_item
+    
+    def _get_video_sequential_context_item(self, index: int):
+        item = self.data[index]
+        item = item[0] if self.data_type!='test' else item[0]
+
+        # TODO: assuming the n'th item in list corresponds to the context image
+        item = item[0]
+        item = np.squeeze(item)
+
+        tensor_list = []
+        for t in range(item.shape[0]): # for each element in sequence
+            t_item = item[t, :]
+            x = convert_img_to_format_used_by_transform(t_item, debug=False)
+        
+            if self.img_transform:
+                x = self.img_transform(x)
+
+            tensor_list.append(x)
+
+        context = torch.stack(tensor_list, dim=0)
+        
+        timeseries_item = {
+            "timeseries_context": context
+        }
+        return timeseries_item
     
     def _get_segm_map_item(self, index):
         """

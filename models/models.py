@@ -668,6 +668,7 @@ class Static(ActionPredict):
             data_gen_params['crop_type'] = 'keep_ped'
         elif 'scene_context' in feature_type and 'segmentation' not in feature_type:
             data_gen_params['crop_type'] = 'remove_ped'
+            #data_gen_params['crop_type'] = 'keep_ped'
 
         _data_samples[feature_type], feat_shape = get_static_context_data(
             self, model_opts, data, data_gen_params, feature_type

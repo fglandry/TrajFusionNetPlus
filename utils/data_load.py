@@ -261,3 +261,32 @@ def get_static_context_data(self,
                                              model_opts=model_opts,
                                              submodels_paths=submodels_paths,
                                              **data_gen_params)  
+
+def get_video_context_data(self, 
+                           model_opts: dict, 
+                           data: dict, 
+                           data_gen_params: dict, 
+                           feature_type: str,
+                           process: bool,
+                           img_sequences, 
+                           bbox_sequences,
+                           ped_ids,
+                           submodels_paths: dict = None):
+    """ Get video context data """
+    
+    data_cpy = copy.deepcopy(data)
+    full_bbox_sequences = data_cpy['box_org']
+    full_rel_bbox_seq = data_cpy['box']
+    full_veh_speed = data_cpy["veh_speed"] if "veh_speed" in data_cpy else data_cpy["speed"]  
+    
+    return self.load_images_crop_and_process(img_sequences, 
+                                             bbox_sequences,
+                                             ped_ids,
+                                             full_bbox_sequences=full_bbox_sequences,
+                                             full_rel_bbox_seq=full_rel_bbox_seq,
+                                             full_veh_speed=full_veh_speed,
+                                             model_opts=model_opts,
+                                             process=process,
+                                             feature_type=feature_type,
+                                             submodels_paths=submodels_paths,
+                                             **data_gen_params)  

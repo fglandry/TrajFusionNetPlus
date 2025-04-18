@@ -48,7 +48,7 @@ class VAN(HuggingFaceImageClassificationModel):
             data_train, dataset_statistics
         )
 
-        model_ckpt = "Visual-Attention-Network/van-large"
+        model_ckpt = "Visual-Attention-Network/van-base"
         model = VanEncodingsForImageClassification.from_pretrained(
             model_ckpt,
             config=config,
@@ -79,6 +79,10 @@ class VAN(HuggingFaceImageClassificationModel):
             remove_unused_columns=False,
             evaluation_strategy="epoch",
             save_strategy="epoch",
+            #evaluation_strategy="steps",
+            #save_strategy="steps",
+            #eval_steps=100,
+            #save_steps=100,
             learning_rate=train_opts["lr"],
             per_device_train_batch_size=batch_size, 
             per_device_eval_batch_size=batch_size,
@@ -256,8 +260,9 @@ def load_pretrained_van(dataset_name: str,
             #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-5390"
             #checkpoint2 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s"
             #checkpoint1 = "data/models/jaad_all/VAN/21Feb2025-13h01m53s/checkpoint-2156"
-            checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
-            checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
+            #checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
+            checkpoint1 = "data/models/jaad_all/VAN/17Apr2025-22h21m10s_VAN4"
+            checkpoint2 = checkpoint1
 
         elif dataset_name == "jaad_beh":
             checkpoint1 = "data/models/jaad_beh/VAN/weights_van1_jaadbeh"
@@ -295,7 +300,7 @@ def get_van_image_processor_and_config(
     label2id = {label: i for i, label in enumerate(class_labels)}
     id2label = {i: label for label, i in label2id.items()}
 
-    model_ckpt = "Visual-Attention-Network/van-large"
+    model_ckpt = "Visual-Attention-Network/van-base"
     
     image_processor = AutoImageProcessor.from_pretrained(model_ckpt)
 

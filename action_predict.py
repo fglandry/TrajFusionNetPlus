@@ -20,7 +20,7 @@ from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve
 from utils.action_predict_utils.run_in_subprocess import run_and_capture_model_path
 from utils.action_predict_utils.trajectory_overlays import TrajectoryOverlays
 from utils.action_predict_utils.sequences import compute_sequences
-from utils.data_load import get_generator, get_static_context_data
+from utils.data_load import get_generator, get_static_context_data, get_video_context_data
 from utils.dataset_statistics import get_dataset_statistics
 from utils.semantic_occurences import get_occurences_of_traffic_elements
 from utils.semantic_processing import get_pixels_of_traffic_elements, get_segm_map_features
@@ -923,7 +923,8 @@ class ActionPredict(object):
             data_gen_params['crop_type'] = 'ped_overlays'
         elif 'with_ped' in feature_type:
             data_gen_params['crop_type'] = 'keep_ped'
-        elif 'scene_context' in feature_type and 'segmentation' not in feature_type:
+        elif ('scene_context' in feature_type and 'segmentation' not in feature_type) \
+            or feature_type=="scene_video":
             data_gen_params['crop_type'] = 'remove_ped'
         elif 'bbox' in feature_type:
             data_gen_params['crop_type'] = 'bbox_resize'
@@ -942,11 +943,20 @@ class ActionPredict(object):
                 data_gen_params, feature_type,
                 submodels_paths=submodels_paths
             )
-        if 'optical_flow' in feature_type:
+        elif 'optical_flow' in feature_type:
             return self.get_optical_flow(data['image'],
                                          data['box_org'],
                                          data['ped_id'],
                                          **data_gen_params)
+        elif 'scene_video_' in feature_type:
+            return get_video_context_data(
+                self, model_opts, data, 
+                data_gen_params, feature_type, process,
+                data['image'],
+                data['box_org'],
+                data['ped_id'],
+                submodels_paths=submodels_paths
+            )
         else:
             return self.load_images_crop_and_process(data['image'],
                                                      data['box_org'],
@@ -1014,6 +1024,8 @@ class ActionPredict(object):
                     get_scene_graph(data, _data, model_opts,
                                     data_type=data_type,
                                     get_previous_scene_graph=True)
+            elif "scene_video" in d_type:
+                features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type)
             else:
                 features = data[d_type]
                 feat_shape = features.shape[1:]

@@ -174,3 +174,9 @@ class GraphTransformer(BaseTransformerModel,
     def __init__(self,
                  **kwargs):
         super().__init__(**kwargs)
+
+class VANSequential(BaseTransformerModel, 
+                    ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)

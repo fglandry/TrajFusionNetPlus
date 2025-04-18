@@ -124,6 +124,8 @@ class TrajectoryOverlays(metaclass=Singleton):
             for idx, coords in enumerate(bbox_sequence):
                 if idx == 0 or ((idx+1) % 5 == 0): # add first bbox and then every 5th
                     b_org = list(map(int, coords[0:4])).copy()
+                    if check_if_bbox_outside_image(img_features, b_org):
+                        continue
                     img_features[b_org[1]:b_org[3], b_org[0]:b_org[2], 0:2] = \
                         np.array(ade_palette()[idx])[0:2]
 
@@ -131,8 +133,9 @@ class TrajectoryOverlays(metaclass=Singleton):
             "with_ped_overlays_combined" in feature_type:
             # Add predicted bounding boxes as overlays on image (last image in sequence)
             for idx, coords in enumerate(absolute_pred_coords):
-
                 b_org = list(map(int, coords[0:4])).copy()
+                if check_if_bbox_outside_image(img_features, b_org):
+                        continue
                 
                 if (idx+1) % 5 == 0: # only add each 5th box
                     img_features[b_org[1]:b_org[3], b_org[0]:b_org[2], 0:2] = \
@@ -147,3 +150,23 @@ class TrajectoryOverlays(metaclass=Singleton):
                 np.array(ade_palette()[idx])[0:2]
 
         return img_features
+
+def check_if_bbox_outside_image(img_features, b_org):
+    if b_org[1] >= img_features.shape[0]:
+        #b_org[1] = img_features.shape[0]-1
+        return True
+    if b_org[3] >= img_features.shape[0]:
+        #b_org[3] = img_features.shape[0]-1
+        return True
+    if b_org[0] >= img_features.shape[1]:
+        #b_org[0] = img_features.shape[1]-1
+        return True
+    if b_org[2] >= img_features.shape[1]:
+        #b_org[2] = img_features.shape[1]-1
+        return True
+    for i in range(4):
+        if b_org[i] < 0:
+            #b_org[i] = 0
+            return True
+    #return b_org
+    return False
