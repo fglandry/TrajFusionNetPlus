@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 
+from models.hugging_face.utils.semantic_segmentation import ade_palette
 from models.hugging_face.utils.semantic_segmentation import DeepLabV3ForSemanticSegmentationWrapper
 from models.hugging_face.utils.semantic_segmentation import SegformerForSemanticSegmentationWrapper
 
@@ -83,6 +84,16 @@ def add_segmentation_map_to_img_features(seg_model, img_features, segm_data, fea
         seg_features, _, _ = seg_model.get_img_combined_with_segmentation_map(class_idx_tsr, image,
                                                                               img_weight=0.0, seg_weight=1.0)
         img_features = np.append(img_features, seg_features, axis=2)
+    elif 'segmentation_v8' in feature_type:
+        veh_idx = 13
+        img_features[segm_data == veh_idx, 0:2] = np.array(ade_palette()[-1])[0:2]
+        test = 10
+    elif 'segmentation_v9' in feature_type:
+        road_idx = 0
+        sidewalk_idx = 1
+        img_features[segm_data == road_idx, 0] = np.array(ade_palette()[-4])[0]
+        img_features[segm_data == sidewalk_idx, 0] = np.array(ade_palette()[-5])[0]
+        test = 10
     else:
         segm_data = np.expand_dims(segm_data, 2)    
         img_features = np.append(img_features, segm_data, axis=2)

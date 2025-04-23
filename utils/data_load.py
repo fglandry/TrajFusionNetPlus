@@ -215,7 +215,8 @@ def get_static_context_data(self,
                             data: dict, 
                             data_gen_params: dict, 
                             feature_type: str,
-                            submodels_paths: dict = None):
+                            submodels_paths: dict = None,
+                            data_raw = None):
     """ Get static context data (i.e. frame at time t-15 or at time t)"""
     
     # Get some settings from config
@@ -247,10 +248,11 @@ def get_static_context_data(self,
                         full_rel_bbox_seq = data_cpy['box']
                     if k in ["speed", "veh_speed"]:
                         full_veh_speed = data_cpy["veh_speed"] if "veh_speed" in data_cpy else data_cpy["speed"]
+                seq_idx = 0 if v.shape[1] == 1 else static_index
                 if len(v.shape) == 3:
-                    data_cpy[k] = np.expand_dims(v[:, static_index, :], axis=1)
+                    data_cpy[k] = np.expand_dims(v[:, seq_idx, :], axis=1)
                 else:
-                    data_cpy[k] = np.expand_dims(v[:, static_index], axis=-1)  
+                    data_cpy[k] = np.expand_dims(v[:, seq_idx], axis=-1)  
     
     return self.load_images_crop_and_process(data_cpy['image'],
                                              data_cpy['box_org'],
@@ -260,6 +262,7 @@ def get_static_context_data(self,
                                              full_veh_speed=full_veh_speed,
                                              model_opts=model_opts,
                                              submodels_paths=submodels_paths,
+                                             data_raw=data_raw,
                                              **data_gen_params)  
 
 def get_video_context_data(self, 

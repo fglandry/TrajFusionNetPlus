@@ -104,6 +104,7 @@ class HuggingFaceTimeSeriesModel():
         video_data = "video" in examples[0]
         timeseries_context = "timeseries_context" in examples[0]
         previous_timeseries_context = "previous_timeseries_context" in examples[0]
+        video_context = "video_context" in examples[0]
         image_context = "image_context" in examples[0]
         previous_image_context = "previous_image_context" in examples[0]
         segm_context = "segmentation_context" in examples[0]
@@ -135,6 +136,9 @@ class HuggingFaceTimeSeriesModel():
         if timeseries_context:
             timeseries_context_values = torch.stack([example["timeseries_context"] for example in examples])
             return_dict.update({"timeseries_context": timeseries_context_values})
+        if video_context:
+            video_context_values = torch.stack([example["video_context"] for example in examples])
+            return_dict.update({"video_context": video_context_values})
         if previous_timeseries_context:
             previous_timeseries_context_values = torch.stack([example["previous_timeseries_context"] for example in examples])
             return_dict.update({"previous_timeseries_context": previous_timeseries_context_values})
@@ -204,13 +208,15 @@ class TorchTimeseriesDataset(Dataset):
 
         # TODO: recode this in a better way
         if "scene_video_with_segmentation_v0" in self.data.input_type_list:
-            self.timeseries_context = "scene_graph" in self.data.input_type_list[1]
+            self.timeseries_context = "scene_graph" in self.data.input_type_list[1] or "scene_graph" in self.data.input_type_list[2]
             self.video_data = False
             self.scene_video_with_segmentation = True
             if "scene_context" in self.data.input_type_list[2]:
                 self.model_type = "TrajFusionNetGraphV1NoSpeed"
                 self.context_image = "scene_context" in self.data.input_type_list[2]
                 self.previous_context_image = "scene_context" in self.data.input_type_list[3]
+            if "scene_video" in self.data.input_type_list[1]:
+                self.video_sequential_context = True
         elif "scene_video" in self.data.input_type_list[0]:
             self.video_sequential_context = True
             self.video_data = False
@@ -281,7 +287,7 @@ class TorchTimeseriesDataset(Dataset):
         if self.timeseries_context:
             timeseries_context_item = self._get_timeseries_context_item(index)
         if self.video_sequential_context:
-            timeseries_context_item = self._get_video_sequential_context_item(index)
+            video_context_item = self._get_video_sequential_context_item(index)
 
         # Get image context item
         if self.context_image:
@@ -298,8 +304,10 @@ class TorchTimeseriesDataset(Dataset):
 
         if self.video_data:
             item.update(video_item)
-        if self.timeseries_context or self.video_sequential_context:
+        if self.timeseries_context:
             item.update(timeseries_context_item)
+        if self.video_sequential_context:
+            item.update(video_context_item)
         if self.context_image:
             item.update(context_image_item)
         if self.previous_context_image:
@@ -364,7 +372,9 @@ class TorchTimeseriesDataset(Dataset):
         obs_input_type_index = 2
         #if self.timeseries_double_context:
         #    obs_input_type_index = 3
-        if self.scene_video_with_segmentation:
+        if self.video_sequential_context:
+            obs_input_type_index = 2 # 'scene_graph'
+        elif self.scene_video_with_segmentation:
             obs_input_type_index = 1
         context_item = np.asarray(item[obs_input_type_index])
 
@@ -495,7 +505,12 @@ class TorchTimeseriesDataset(Dataset):
         item = item[0] if self.data_type!='test' else item[0]
 
         # TODO: assuming the n'th item in list corresponds to the context image
-        item = item[0]
+        if not self.scene_video_with_segmentation:
+            obs_input_type_index = 0
+        else:
+            obs_input_type_index = 1
+
+        item = item[obs_input_type_index]
         item = np.squeeze(item)
 
         tensor_list = []
@@ -511,7 +526,7 @@ class TorchTimeseriesDataset(Dataset):
         context = torch.stack(tensor_list, dim=0)
         
         timeseries_item = {
-            "timeseries_context": context
+            "video_context": context
         }
         return timeseries_item
     

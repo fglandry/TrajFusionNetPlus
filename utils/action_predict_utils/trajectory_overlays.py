@@ -72,7 +72,11 @@ class TrajectoryOverlays(metaclass=Singleton):
             full_bbox_seqs: np.ndarray,
             full_rel_bbox_seqs: np.ndarray,
             full_veh_speed_seqs: np.ndarray, 
-            i: int
+            i: int,
+            add_all_peds = False,
+            data_raw = None,
+            p_id = None,
+            img_id = None
         ):
         """ Compute pedestrian trajectory overlays, which will be added to 'img_data'.
             The overlays are obtained by predicting future pedestrian bounding boxes.
@@ -149,6 +153,9 @@ class TrajectoryOverlays(metaclass=Singleton):
             img_features[b_org[1]:b_org[3], b_org[0]:b_org[2], 0:2] = \
                 np.array(ade_palette()[idx])[0:2]
 
+        if add_all_peds:
+            img_features = find_bbox_of_secondary_peds(img_features, data_raw, p_id, img_id)
+        
         return img_features
 
 def check_if_bbox_outside_image(img_features, b_org):
@@ -170,3 +177,21 @@ def check_if_bbox_outside_image(img_features, b_org):
             return True
     #return b_org
     return False
+
+def find_bbox_of_secondary_peds(img_features, data_raw, p_id, img_id):
+
+    same_img_indices = [
+        (i, j)
+        for i, sublist in enumerate(data_raw["image"])
+        for j, item in enumerate(sublist)
+        if item == img_id
+    ]
+    same_img_pids = [data_raw["pid"][i][j] for i, j in same_img_indices]
+    same_img_bbox = [data_raw["bbox"][i][j] for i, j in same_img_indices]
+    
+    for bbox in same_img_bbox:
+        b = list(map(int, bbox)).copy()
+        img_features[b[1]:b[3], b[0]:b[2], 0:2] = \
+                    np.array(ade_palette()[-10])[0:2]
+
+    return img_features

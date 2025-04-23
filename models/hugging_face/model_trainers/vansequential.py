@@ -10,6 +10,7 @@ from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTr
 from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransformer
 from libs.time_series_library.models_tsl.Transformer import Model as VanillaTransformerTSLModel
 from models.custom_layers_pytorch import CrossAttention
+from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
 from models.hugging_face.model_trainers.trajectorytransformer import load_pretrained_trajectory_transformer
 from models.hugging_face.model_trainers.trajectorytransformerb import load_pretrained_encoder_transformer
 from models.hugging_face.model_trainers.van import load_pretrained_van
@@ -71,7 +72,7 @@ class VANSequential(HuggingFaceTimeSeriesModel):
         #config_for_context_timeseries = get_config_for_context_timeseries(
         #    encoder_input_size, context_len, hyperparams)
         
-        encoder_input_size = 512-1
+        encoder_input_size = 1024-1 # 512-1
         config_for_timeseries_lib = get_config_for_timeseries_lib(
             encoder_input_size, seq_len, hyperparams)
         config_for_huggingface = TimeSeriesTransformerConfig()
@@ -154,7 +155,7 @@ class VANSequential(HuggingFaceTimeSeriesModel):
         print("Starting inference using trained model Trajectory Transformer Classifier ===========================")
 
         if test_only:
-            pretrained_model = load_pretrained_graph_transformer(dataset_name)
+            pretrained_model = load_pretrained_van_sequential(dataset_name)
             training_result["trainer"].model = pretrained_model
 
         return test_time_series_based_model(
@@ -176,7 +177,7 @@ class VANEncoderTransformerForClassification(TimeSeriesTransformerPreTrainedMode
         super().__init__(config_for_huggingface, config_for_timeseries_lib)
         self.num_labels = config_for_huggingface.num_labels
 
-        classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
+        classifier_hidden_size = 512 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
         
         self.van_sequential_tf = VANEncoderTransformer(
             config_for_huggingface,
@@ -197,6 +198,7 @@ class VANEncoderTransformerForClassification(TimeSeriesTransformerPreTrainedMode
         timeseries_context: Optional[torch.Tensor] = None,
         previous_timeseries_context: Optional[torch.Tensor] = None,
         # normalized_trajectory_values: torch.Tensor = None,
+        video_context: Optional[torch.Tensor] = None,
         labels: torch.Tensor = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
@@ -215,7 +217,8 @@ class VANEncoderTransformerForClassification(TimeSeriesTransformerPreTrainedMode
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = self.van_sequential_tf(
-            timeseries_context=timeseries_context
+            timeseries_context=timeseries_context,
+            video_context=video_context
         )
 
         logits = self.fc1(outputs)
@@ -253,6 +256,13 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
             #submodels_paths=submodels_paths
         )
 
+        # Get pretrained GraphTransformer model -------------------------------------------
+        self.graph_tf = load_pretrained_graph_transformer(
+            dataset_name,
+            add_classification_head=False,
+            #submodels_paths=submodels_paths
+        )
+
         classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
         self.classifier = nn.Linear(
             classifier_hidden_size, config_for_huggingface.num_labels) \
@@ -269,6 +279,7 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         trajectory_values: torch.Tensor = None,
         timeseries_context: Optional[torch.Tensor] = None,
         previous_timeseries_context: Optional[torch.Tensor] = None,
+        video_context: Optional[torch.Tensor] = None,
         # normalized_trajectory_values: torch.Tensor = None,
         labels: torch.Tensor = None,
         output_hidden_states: Optional[bool] = None,
@@ -287,37 +298,69 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         assert output_hidden_states is None
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        ctx_tf_output_0 = self.van(timeseries_context[:,0,:,:]).pooler_output
+        # TODO: remove
+        #selected = video_context[:, [0, -8, -1], 0, :, :]
+        selected = video_context[:, :, 0, :, :]
+        #img_idx_0 = video_context[:, 0, :, :, :]
+        # img_idx_0 = video_context[:, -8, :, :, :]
+        #img_idx_15 = video_context[:, -1, :, :, :]
+        #selected = torch.cat((img_idx_0, img_idx_15), dim=1)
+        van_output = self.van(selected).pooler_output
+        return van_output
+
+        graph_tf_output_0 = self.graph_tf.context_transformer(
+            timeseries_context[:,0,:,:]
+        )
+        van_output_0 = self.van(video_context[:,0,:,:,:]).pooler_output
+        output_0 = torch.cat((van_output_0, graph_tf_output_0), dim=1)
+
         #ctx_tf_output_1 = self.van(timeseries_context[:,1,:,:]).pooler_output
         #ctx_tf_output_2 = self.van(timeseries_context[:,2,:,:]).pooler_output
         #ctx_tf_output_3 = self.van(timeseries_context[:,3,:,:]).pooler_output
         #ctx_tf_output_4 = self.van(timeseries_context[:,4,:,:]).pooler_output
-        ctx_tf_output_5 = self.van(timeseries_context[:,5,:,:]).pooler_output
+
+        graph_tf_output_5 = self.graph_tf.context_transformer(
+            timeseries_context[:,5,:,:]
+        )
+        van_output_5 = self.van(video_context[:,5,:,:,:]).pooler_output
+        output_5 = torch.cat((van_output_5, graph_tf_output_5), dim=1)
+
         #ctx_tf_output_6 = self.van(timeseries_context[:,6,:,:]).pooler_output
         #ctx_tf_output_7 = self.van(timeseries_context[:,7,:,:]).pooler_output
         #ctx_tf_output_8 = self.van(timeseries_context[:,8,:,:]).pooler_output
         #ctx_tf_output_9 = self.van(timeseries_context[:,9,:,:]).pooler_output
-        ctx_tf_output_10 = self.van(timeseries_context[:,10,:,:]).pooler_output
+
+        graph_tf_output_10 = self.graph_tf.context_transformer(
+            timeseries_context[:,10,:,:]
+        )
+        van_output_10 = self.van(video_context[:,10,:,:,:]).pooler_output
+        output_10 = torch.cat((van_output_10, graph_tf_output_10), dim=1)
+
         #ctx_tf_output_11 = self.van(timeseries_context[:,11,:,:]).pooler_output
         #ctx_tf_output_12 = self.van(timeseries_context[:,12,:,:]).pooler_output
         #ctx_tf_output_13 = self.van(timeseries_context[:,13,:,:]).pooler_output
-        ctx_tf_output_14 = self.van(timeseries_context[:,14,:,:]).pooler_output
+        
+        graph_tf_output_14 = self.graph_tf.context_transformer(
+            timeseries_context[:,14,:,:]
+        )
+        van_output_14 = self.van(video_context[:,14,:,:,:]).pooler_output
+        output_14 = torch.cat((van_output_14, graph_tf_output_14), dim=1)
 
-        ctx_tf_output = torch.stack((ctx_tf_output_0,
+        ctx_tf_output = torch.stack((output_0,
                                      #ctx_tf_output_1,
                                      #ctx_tf_output_2,
                                      #ctx_tf_output_3,
                                      #ctx_tf_output_4,
-                                     ctx_tf_output_5,
+                                     output_5,
                                      #ctx_tf_output_6,
                                      #ctx_tf_output_7,
                                      #ctx_tf_output_8,
                                      #ctx_tf_output_9,
-                                     ctx_tf_output_10,
+                                     output_10,
                                      #ctx_tf_output_11,
                                      #ctx_tf_output_12,
                                      #ctx_tf_output_13,
-                                     ctx_tf_output_14), dim=1)
+                                     output_14), dim=1)
 
         outputs = self.tsl_transformer(
             x_enc=ctx_tf_output,
@@ -343,7 +386,7 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         return outputs
 
 
-def load_pretrained_graph_transformer(dataset_name: str,
+def load_pretrained_van_sequential(dataset_name: str,
                                         add_classification_head: bool = True,
                                         submodels_paths: dict = None):
     config_for_encoder_tf = get_config_for_timeseries_lib(
@@ -424,4 +467,3 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
     
     config_for_timeseries_lib = TimeSeriesLibraryConfig(time_series_dict)
     return config_for_timeseries_lib
-

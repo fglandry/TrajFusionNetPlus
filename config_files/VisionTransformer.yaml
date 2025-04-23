@@ -1,6 +1,6 @@
 model_opts:
   model: VisionTransformer
-  obs_input_type: [scene_context_with_segmentation_v4_with_ped_overlays_combined]
+  obs_input_type: [scene_context_with_ped_overlays_combined]
   apply_class_weights: True
   generator: True
   frameworks:
@@ -13,5 +13,5 @@ model_opts:
 exp_opts:
   datasets: [jaad_all]
   batch_size: [16]
-  epochs: [20]
+  epochs: [5]
   lr: [5.0e-05]

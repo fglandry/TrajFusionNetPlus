@@ -28,6 +28,7 @@ class VisionTransformer(HuggingFaceImageClassificationModel):
               generator: bool = False,
               dataset_statistics: dict = None,
               test_only: bool = False,
+              class_w=None,
               **kwargs
         ):
         """ Train model
@@ -51,7 +52,8 @@ class VisionTransformer(HuggingFaceImageClassificationModel):
         model = CustomViTForImageClassification.from_pretrained(
             model_ckpt,
             config=config,
-            ignore_mismatched_sizes=True)
+            ignore_mismatched_sizes=True,
+            class_w=class_w)
         summary(model)
 
         if not generator:
@@ -76,8 +78,12 @@ class VisionTransformer(HuggingFaceImageClassificationModel):
         args = TrainingArguments(
             output_dir=model_path,
             remove_unused_columns=False,
-            evaluation_strategy="epoch",
-            save_strategy="epoch",
+            #evaluation_strategy="epoch",
+            #save_strategy="epoch",
+            evaluation_strategy="steps",
+            save_strategy="steps",
+            eval_steps=100,
+            save_steps=100,
             learning_rate=train_opts["lr"],
             per_device_train_batch_size=batch_size, 
             per_device_eval_batch_size=batch_size,
@@ -147,10 +153,15 @@ class VisionTransformer(HuggingFaceImageClassificationModel):
 class CustomViTForImageClassification(ViTPreTrainedModel):
     """ Adapted from the transformers library """
 
-    def __init__(self, config):
+    def __init__(self, config, class_w=None):
         super().__init__(config)
         self.vit = ViTModel(config)
         self._config = config
+        if class_w:
+            self._device = get_device()
+            self.class_w = torch.tensor(class_w).to(self._device)
+        else:
+            self.class_w = None
         self.classifier = (
             nn.Linear(768, config.num_labels) if config.num_labels > 0 else nn.Identity()
         )
@@ -181,7 +192,8 @@ class CustomViTForImageClassification(ViTPreTrainedModel):
                             self._config,
                             self._config.num_labels,
                             return_dict,
-                            problem_type=self._config.problem_type)
+                            problem_type=self._config.problem_type,
+                            class_w=self.class_w)
 
 
 
@@ -202,6 +214,7 @@ def load_pretrained_vit(dataset_name: str,
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
             checkpoint2 = "data/models/jaad_all/VAN/weights_van2_jaadall"
             checkpoint2 = "data/models/jaad_all/VisionTransformer/17Feb2025-21h44m06s/checkpoint-9163"
+            checkpoint1 = "data/models/jaad_all/VisionTransformer/21Apr2025-13h11m57s/checkpoint-2600"
 
         elif dataset_name == "jaad_beh":
             checkpoint1 = "data/models/jaad_beh/VAN/weights_van1_jaadbeh"

@@ -634,7 +634,10 @@ class Static(ActionPredict):
                                 'scene_context_with_segmentation_v4',
                                 'scene_context_with_segmentation_v4_with_ped_overlays_combined',
                                 'scene_context_with_segmentation_v6_with_ped_overlays_combined',
-                                'scene_context_with_segmentation_v7_with_ped_overlays_combined'
+                                'scene_context_with_segmentation_v7_with_ped_overlays_combined',
+                                'scene_context_with_segmentation_v8_with_ped_overlays_combined',
+                                'scene_context_with_segmentation_v9_with_ped_overlays_combined',
+                                'scene_context_with_ped_overlays_combined_all_peds'
                                 ]
 
         _data_samples = {}
@@ -671,7 +674,8 @@ class Static(ActionPredict):
             #data_gen_params['crop_type'] = 'keep_ped'
 
         _data_samples[feature_type], feat_shape = get_static_context_data(
-            self, model_opts, data, data_gen_params, feature_type
+            self, model_opts, data, data_gen_params, feature_type,
+            data_raw=data_raw
         )
     
         if not self._generator:

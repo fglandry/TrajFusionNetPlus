@@ -142,6 +142,7 @@ class ActionPredict(object):
                                      store_data_only: bool = False,
                                      model_opts: dict = None,
                                      submodels_paths: dict = None,
+                                     data_raw = None,
                                      compute_time=False,
                                      debug: bool = False):
         """
@@ -259,16 +260,24 @@ class ActionPredict(object):
                             img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
                             show_image(img_features) if debug else None
                         elif 'ped_overlays' in crop_type:
+                            if '_v8' in feature_type or 'v9' in feature_type:
+                                img_features = get_semantic_segmentation(
+                                    img_data, img_data, target_dim, feature_type, b, crop_mode,
+                                    compute_time=compute_time)
                             if '_v4' not in feature_type:
                                 img_features = TrajectoryOverlays(
                                     model_opts, submodels_paths).compute_trajectory_overlays(
                                         img_data, feature_type,
                                         full_bbox_sequences, full_rel_bbox_seq, 
-                                        full_veh_speed, i)
+                                        full_veh_speed, i,
+                                        add_all_peds = "all_peds" in feature_type,
+                                        p_id=p,
+                                        img_id=imp,
+                                        data_raw=data_raw)
                                 img_features = cv2.resize(img_features, target_dim)
                             else: # ped overlays will be computed later
                                 img_features = img_data.copy()
-                            show_image(img_features) if debug else None
+                            #show_image(img_features) if debug else None
                         elif 'remove_ped' in crop_type:
                             b_org = list(map(int, b[0:4])).copy()
                             img_features = img_data.copy()
@@ -285,7 +294,7 @@ class ActionPredict(object):
                         else:
                             raise ValueError('ERROR: Undefined value for crop_type {}!'.format(crop_type))
                     
-                    if 'segmentation' in feature_type:
+                    if 'segmentation' in feature_type and "_v8" not in feature_type and "_v9" not in feature_type:
                         img_features = get_semantic_segmentation(
                             img_features, img_data, target_dim, feature_type, b, crop_mode,
                             compute_time=compute_time)
@@ -295,7 +304,8 @@ class ActionPredict(object):
                             img_features = cv2.resize(img_features, target_dim)
                             #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/sem_output_{str(time.time()).replace('.', '_')}.png", img_features)
                         # print(f"Processing {img_save_path} ...")
-                        
+                        show_image(img_features) if debug else None
+
                     if preprocess_input is not None:
                         img_features = preprocess_input(img_features)
                     if process:

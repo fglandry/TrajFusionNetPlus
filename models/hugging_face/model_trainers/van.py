@@ -29,6 +29,7 @@ class VAN(HuggingFaceImageClassificationModel):
               generator: bool = False,
               dataset_statistics: dict = None,
               test_only: bool = False,
+              class_w=None,
               **kwargs
         ):
         """ Train model
@@ -44,6 +45,8 @@ class VAN(HuggingFaceImageClassificationModel):
         print("Starting model loading for model VAN: Visual Attention Network ===========================")
 
         self._device = get_device()
+        #self.class_w = torch.tensor(class_w).to(self._device)
+        self.class_w = class_w
         image_processor, config = get_van_image_processor_and_config(
             data_train, dataset_statistics
         )
@@ -52,7 +55,8 @@ class VAN(HuggingFaceImageClassificationModel):
         model = VanEncodingsForImageClassification.from_pretrained(
             model_ckpt,
             config=config,
-            ignore_mismatched_sizes=True)
+            ignore_mismatched_sizes=True,
+            class_w=class_w)
         summary(model)
 
         if not generator:
@@ -152,10 +156,14 @@ class VAN(HuggingFaceImageClassificationModel):
 class VanEncodingsForImageClassification(VanPreTrainedModel):
     """ Adapted from the transformers library """
 
-    def __init__(self, config: VanConfig):
+    def __init__(self, config: VanConfig, class_w=None):
         super().__init__(config)
         self.van = VanEncodingsModel(config)
         self._config = config
+        if class_w:
+            self._device = get_device()
+            self.class_w = torch.tensor(class_w).to(self._device)
+        
         self.classifier = (
             nn.Linear(30, config.num_labels) if config.num_labels > 0 else nn.Identity()
         )
@@ -170,6 +178,7 @@ class VanEncodingsForImageClassification(VanPreTrainedModel):
     ):
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        class_w = self.class_w if hasattr(self, 'class_w') else None
 
         outputs = self.van(
             pixel_values, 
@@ -187,6 +196,7 @@ class VanEncodingsForImageClassification(VanPreTrainedModel):
                             self._config.num_labels,
                             return_dict,
                             problem_type=self._config.problem_type)
+                            #class_w=class_w)
 
 
 class VanEncodingsModel(VanPreTrainedModel):
@@ -261,7 +271,14 @@ def load_pretrained_van(dataset_name: str,
             #checkpoint2 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s"
             #checkpoint1 = "data/models/jaad_all/VAN/21Feb2025-13h01m53s/checkpoint-2156"
             #checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
-            checkpoint1 = "data/models/jaad_all/VAN/17Apr2025-22h21m10s_VAN4"
+            #checkpoint1 = "data/models/jaad_all/VAN/17Apr2025-22h21m10s_VAN4"
+            #checkpoint1 = "data/models/jaad_all/VAN/18Apr2025-20h24m55s/checkpoint-1617"
+            #checkpoint1 = "data/models/jaad_all/VAN/19Apr2025-21h27m34s/checkpoint-8085"
+            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-10h48m44s/checkpoint-1200"
+            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-11h21m10s/checkpoint-2600"
+            #checkpoint1 = "data/models/jaad_all/VAN/20Apr2025-23h37m47s_VAN8/checkpoint-1100"
+            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-12h07m13s_VAN9/checkpoint-2600"
+            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-17h52m06s/checkpoint-8085"
             checkpoint2 = checkpoint1
 
         elif dataset_name == "jaad_beh":
@@ -279,6 +296,24 @@ def load_pretrained_van(dataset_name: str,
             label2id=label2id,
             ignore_mismatched_sizes=True)
     else:
+        # TODO: remove the following
+        """
+        class_labels = ["no_cross", "cross"]
+        label2id = {label: i for i, label in enumerate(class_labels)}
+        id2label = {i: label for label, i in label2id.items()}
+        model_ckpt = "Visual-Attention-Network/van-base"
+        config = VanEncodingsForImageClassification.from_pretrained(
+            model_ckpt,
+            id2label=id2label,
+            label2id=label2id,
+            ignore_mismatched_sizes=True).config # TODO: there must be a better way to do this without loading the model
+        config.num_channels = 15 # TODO: change back to 3
+        config.problem_type = "single_label_classification"
+        pretrained_model = VanModel.from_pretrained(
+            checkpoint,
+            config=config,
+            ignore_mismatched_sizes=True)
+        """
         pretrained_model = VanModel.from_pretrained(
             checkpoint,
             id2label=id2label,
