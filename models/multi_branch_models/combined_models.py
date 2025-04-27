@@ -180,3 +180,9 @@ class VANSequential(BaseTransformerModel,
     def __init__(self,
                  **kwargs):
         super().__init__(**kwargs)
+
+class VANSequentialV2(BaseTransformerModel, 
+                    ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)

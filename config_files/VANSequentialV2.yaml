@@ -1,10 +1,12 @@
 model_opts:
-  model: VANSequential
+  model: VANSequentialV2
   apply_class_weights: True
   generator: True
   obs_input_type: [scene_video_with_segmentation_v0,
                    scene_video_with_ped_overlays_combined,
                    scene_graph,
+                   scene_context_with_segmentation_v4_with_ped_overlays_combined,
+                   scene_video_with_segmentation_v4_with_ped_overlays_combined,
                    box, speed]
   frameworks:
     pytorch: True
@@ -12,10 +14,10 @@ model_opts:
     multi-gpu: False
   process_input_features:
     enabled: True
-    indexes_to_stack: [3, 4]
+    indexes_to_stack: [5, 6]
     static_features_indexes: []
 exp_opts:
   datasets: [jaad_all]
   batch_size: [16]
-  epochs: [10]
-  lr: [1.0e-04]
+  epochs: [20]
+  lr: [5.0e-06]

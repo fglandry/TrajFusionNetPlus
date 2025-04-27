@@ -16,6 +16,8 @@ from models.hugging_face.utilities import compute_loss, get_class_labels_info, g
 from utils.data_load import DataGenerator
 
 
+NUM_CHANNELS = 3
+
 class VAN(HuggingFaceImageClassificationModel):
 
     def train(self,
@@ -245,10 +247,12 @@ class VanEncodingsModel(VanPreTrainedModel):
 def load_pretrained_van(dataset_name: str,
                         is_predicted_overlays: bool = True,
                         add_classification_head: bool = True,
-                        submodels_paths: dict = None):
+                        submodels_paths: dict = None,
+                        num_channels: int = None,
+                        train_layers: bool = False):
     if submodels_paths:
-        checkpoint1 = submodels_paths["van_path"]
-        checkpoint2 = submodels_paths["van_prev_path"]
+        checkpoint1 = submodels_paths.get("van_path")
+        checkpoint2 = submodels_paths.get("van_prev_path")
     else:
         label2id, id2label = get_class_labels_info()
 
@@ -263,7 +267,7 @@ def load_pretrained_van(dataset_name: str,
             checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
-            checkpoint2 = "data/models/jaad_all/VAN/weights_van2_jaadall"
+            #checkpoint1 = "data/models/jaad_all/VAN/weights_van2_jaadall"
             #checkpoint1 = "data/models/jaad_all/VAN/16Feb2025-13h47m07s"
             #checkpoint1 = "data/models/jaad_all/VAN/16Feb2025-20h16m23s/checkpoint-8085"
             #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-10780"
@@ -314,16 +318,24 @@ def load_pretrained_van(dataset_name: str,
             config=config,
             ignore_mismatched_sizes=True)
         """
-        pretrained_model = VanModel.from_pretrained(
-            checkpoint,
-            id2label=id2label,
-            label2id=label2id,
-            ignore_mismatched_sizes=True)
+        if num_channels:
+            config = get_van_config(num_channels)
+            pretrained_model = VanModel.from_pretrained(
+                checkpoint,
+                config=config,
+                ignore_mismatched_sizes=True)
+        else:
+            pretrained_model = VanModel.from_pretrained(
+                checkpoint,
+                id2label=id2label,
+                label2id=label2id,
+                ignore_mismatched_sizes=True)
 
     # Make all layers untrainable
-    for child in pretrained_model.children():
-        for param in child.parameters():
-            param.requires_grad = False
+    if not train_layers:
+        for child in pretrained_model.children():
+            for param in child.parameters():
+                param.requires_grad = False
     return pretrained_model
 
 
@@ -349,7 +361,24 @@ def get_van_image_processor_and_config(
         id2label=id2label,
         label2id=label2id,
         ignore_mismatched_sizes=True).config # TODO: there must be a better way to do this without loading the model
-    config.num_channels = 3 # TODO: change back to 3
+    config.num_channels = NUM_CHANNELS
     config.problem_type = "single_label_classification"
 
     return image_processor, config
+
+def get_van_config(num_channels):
+    class_labels = ["no_cross", "cross"]
+    label2id = {label: i for i, label in enumerate(class_labels)}
+    id2label = {i: label for label, i in label2id.items()}
+
+    model_ckpt = "Visual-Attention-Network/van-base"
+    
+    config = VanEncodingsForImageClassification.from_pretrained(
+        model_ckpt,
+        id2label=id2label,
+        label2id=label2id,
+        ignore_mismatched_sizes=True).config # TODO: there must be a better way to do this without loading the model
+    config.num_channels = num_channels
+    config.problem_type = "single_label_classification"
+
+    return config

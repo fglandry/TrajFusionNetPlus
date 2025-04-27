@@ -53,15 +53,20 @@ def get_timeseries_datasets(data_train: dict, data_val: Any,
         
     if get_seg_maps_transforms:    
         # todo: revisit
+        modality = "scene_context_with_segmentation_v0"
+        modality = modality if "scene_context_with_segmentation_v4_with_ped_overlays_combined" not in dataset_statistics["dataset_means"] else "scene_context_with_segmentation_v4_with_ped_overlays_combined"
         train_segm_map_transform, val_segm_map_transform = \
             get_image_transforms(image_processor, img_model_config, 
                                  dataset_statistics=dataset_statistics,
-                                 modality="scene_context_with_segmentation_v0")
-        train_segm2_map_transform, val_segm2_map_transform = \
-            get_image_transforms(image_processor, img_model_config, 
-                                 dataset_statistics=dataset_statistics,
-                                 modality="scene_context_with_segmentation_v5")
-
+                                 modality=modality)
+        if modality == "scene_context_with_segmentation_v0":
+            train_segm2_map_transform, val_segm2_map_transform = \
+                get_image_transforms(image_processor, img_model_config, 
+                                    dataset_statistics=dataset_statistics,
+                                    modality="scene_context_with_segmentation_v5")
+        else:
+            train_segm2_map_transform, val_segm2_map_transform = None, None
+            
     train_dataset = TorchTimeseriesDataset(
         data_train['data'][0], None, 'train', 
         generator=generator,
@@ -105,6 +110,7 @@ class HuggingFaceTimeSeriesModel():
         timeseries_context = "timeseries_context" in examples[0]
         previous_timeseries_context = "previous_timeseries_context" in examples[0]
         video_context = "video_context" in examples[0]
+        video_segmentation = "video_segmentation" in examples[0]
         image_context = "image_context" in examples[0]
         previous_image_context = "previous_image_context" in examples[0]
         segm_context = "segmentation_context" in examples[0]
@@ -139,6 +145,9 @@ class HuggingFaceTimeSeriesModel():
         if video_context:
             video_context_values = torch.stack([example["video_context"] for example in examples])
             return_dict.update({"video_context": video_context_values})
+        if video_segmentation:
+            video_segmentation_values = torch.stack([example["video_segmentation"] for example in examples])
+            return_dict.update({"video_segmentation": video_segmentation_values})
         if previous_timeseries_context:
             previous_timeseries_context_values = torch.stack([example["previous_timeseries_context"] for example in examples])
             return_dict.update({"previous_timeseries_context": previous_timeseries_context_values})
@@ -189,6 +198,7 @@ class TorchTimeseriesDataset(Dataset):
         self.context_image = False
         self.scene_video_with_segmentation = False
         self.video_sequential_context = False
+        self.video_sequential_segmentation = False
         self.video_embeddings = False
         self.segm_map, self.segm_map2 = "", ""
         self.model_type = ""
@@ -217,6 +227,8 @@ class TorchTimeseriesDataset(Dataset):
                 self.previous_context_image = "scene_context" in self.data.input_type_list[3]
             if "scene_video" in self.data.input_type_list[1]:
                 self.video_sequential_context = True
+            if len(self.data.input_type_list) > 4 and "with_segmentation" in self.data.input_type_list[4]:
+                self.video_sequential_segmentation = True
         elif "scene_video" in self.data.input_type_list[0]:
             self.video_sequential_context = True
             self.video_data = False
@@ -288,6 +300,8 @@ class TorchTimeseriesDataset(Dataset):
             timeseries_context_item = self._get_timeseries_context_item(index)
         if self.video_sequential_context:
             video_context_item = self._get_video_sequential_context_item(index)
+        if self.video_sequential_segmentation:
+            video_segmentation_item = self._get_video_sequential_context_item(index, segmentation=True)
 
         # Get image context item
         if self.context_image:
@@ -308,6 +322,8 @@ class TorchTimeseriesDataset(Dataset):
             item.update(timeseries_context_item)
         if self.video_sequential_context:
             item.update(video_context_item)
+        if self.video_sequential_segmentation:
+            item.update(video_segmentation_item)
         if self.context_image:
             item.update(context_image_item)
         if self.previous_context_image:
@@ -500,7 +516,8 @@ class TorchTimeseriesDataset(Dataset):
 
         return image_item
     
-    def _get_video_sequential_context_item(self, index: int):
+    def _get_video_sequential_context_item(self, index: int, 
+                                           segmentation: bool = False):
         item = self.data[index]
         item = item[0] if self.data_type!='test' else item[0]
 
@@ -508,7 +525,10 @@ class TorchTimeseriesDataset(Dataset):
         if not self.scene_video_with_segmentation:
             obs_input_type_index = 0
         else:
-            obs_input_type_index = 1
+            if segmentation:
+                obs_input_type_index = 4
+            else:
+                obs_input_type_index = 1
 
         item = item[obs_input_type_index]
         item = np.squeeze(item)
@@ -518,16 +538,24 @@ class TorchTimeseriesDataset(Dataset):
             t_item = item[t, :]
             x = convert_img_to_format_used_by_transform(t_item, debug=False)
         
-            if self.img_transform:
+            if segmentation:
+                x = self.segm_transform(x)
+
+            elif self.img_transform:
                 x = self.img_transform(x)
 
             tensor_list.append(x)
 
         context = torch.stack(tensor_list, dim=0)
         
-        timeseries_item = {
-            "video_context": context
-        }
+        if segmentation:
+            timeseries_item = {
+                "video_segmentation": context
+            }
+        else:
+            timeseries_item = {
+                "video_context": context
+            }
         return timeseries_item
     
     def _get_segm_map_item(self, index):
