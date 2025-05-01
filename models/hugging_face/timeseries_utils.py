@@ -229,7 +229,7 @@ class TorchTimeseriesDataset(Dataset):
                 self.video_sequential_context = True
             if len(self.data.input_type_list) > 4 and "with_segmentation" in self.data.input_type_list[4]:
                 self.video_sequential_segmentation = True
-        elif "scene_video" in self.data.input_type_list[0]:
+        elif "scene_video" in self.data.input_type_list[0] or "local_box_video" in self.data.input_type_list[0]:
             self.video_sequential_context = True
             self.video_data = False
         elif "scene_graph" in self.data.input_type_list and "scene_graph_doubled" in self.data.input_type_list:

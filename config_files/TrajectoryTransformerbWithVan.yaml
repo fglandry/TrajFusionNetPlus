@@ -1,18 +1,20 @@
 model_opts:
-  model: TrajectoryTransformerNoSpeed
+  model: TrajectoryTransformerbWithVan
   apply_class_weights: True
   generator: True
-  obs_input_type: [box]
+  obs_input_type: [local_box_video,
+                   box, speed]
   frameworks:
     pytorch: True
     hugging_faces: True
     multi-gpu: False
   process_input_features:
     enabled: True
-    indexes_to_stack: []
+    indexes_to_stack: [1, 2]
     static_features_indexes: []
+  process: False
 exp_opts:
   datasets: [pie]
-  batch_size: [64]
-  epochs: [40]
-  lr: [5.0e-05]
+  batch_size: [16]
+  epochs: [30]
+  lr: [5.0e-06]

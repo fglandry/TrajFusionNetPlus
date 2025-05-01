@@ -242,6 +242,7 @@ class ActionPredict(object):
                             img_data = cv2.flip(img_data, 1)
                         if crop_type == 'bbox':
                             img_features = crop_bbox(img_data, b, crop_mode, target_dim)
+                            show_image(img_features) if debug else None
                         elif 'context' in crop_type:
                             bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
                             bbox = squarify(bbox, 1, img_data.shape[1])

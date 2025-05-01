@@ -428,6 +428,7 @@ def load_pretrained_van_sequential_v2(dataset_name: str,
             checkpoint = "data/models/jaad_all/VANSequential/18Apr2025-11h02m52s/checkpoint-7007"
             checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1/checkpoint-5390"
             #checkpoint = "data/models/jaad_all/VANSequentialV2/27Apr2025-10h50m10s/checkpoint-4312"
+            checkpoint = "data/models/jaad_all/VANSequentialV2/27Apr2025-13h41m45s/checkpoint-4312"
 
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"

@@ -118,6 +118,10 @@ def compute_huggingface_forecast_metrics(
     predictions = eval_pred.predictions
     references = eval_pred.label_ids
 
+    if predictions.shape[-1] != references.shape[-1]:
+        # in this case, we are likely training a model on speed only...
+        references = references[:,:,-1]
+
     predictions = predictions.flatten()
     references = references.flatten()
 

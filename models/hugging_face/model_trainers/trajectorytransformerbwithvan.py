@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 from torch import nn
@@ -10,15 +10,17 @@ from libs.time_series_library.models_tsl.Transformer import Model as VanillaTran
 from models.hugging_face.model_trainers.trajectorytransformer import load_pretrained_trajectory_transformer
 from models.hugging_face.model_trainers.trajectorytransformeronlyspeed import load_pretrained_trajectory_tf_only_speed
 from models.hugging_face.model_trainers.trajectorytransformernospeed import load_pretrained_trajectory_transformer as load_pretrained_trajectory_tf_box
+from models.hugging_face.model_trainers.van import load_pretrained_van
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
+from models.hugging_face.utils.create_optimizer import get_optimizer
 from utils.data_load import DataGenerator
 
 PRED_LEN = 60
 
 
-class TrajectoryTransformerb(HuggingFaceTimeSeriesModel):
+class TrajectoryTransformerbWithVan(HuggingFaceTimeSeriesModel):
 
     def train(self,
               data_train: dict,  
@@ -47,8 +49,8 @@ class TrajectoryTransformerb(HuggingFaceTimeSeriesModel):
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][0]
-        encoder_input_size = data_element.shape[-1]
-        seq_len = data_element.shape[-2] + PRED_LEN # 75
+        encoder_input_size = 45 # data_element.shape[-1] + 40
+        seq_len = 75 # data_element.shape[-2] + PRED_LEN # 75
         
         # Get hyperparameters if specified for training run
         hyperparams = hyperparams.get(self.__class__.__name__.lower(), {}) if hyperparams else {}
@@ -72,7 +74,7 @@ class TrajectoryTransformerb(HuggingFaceTimeSeriesModel):
         # Get datasets
         train_dataset, val_dataset, val_transforms_dicts = get_timeseries_datasets(
             data_train, data_val, model, generator, None,
-            get_image_transform=False, img_model_config=None,
+            get_image_transform=True, img_model_config=None,
             dataset_statistics=dataset_statistics)
 
         args = TrainingArguments(
@@ -92,6 +94,7 @@ class TrajectoryTransformerb(HuggingFaceTimeSeriesModel):
             max_steps=-1,
         )
 
+        """
         trainer = Trainer(
             model,
             args,
@@ -106,11 +109,90 @@ class TrajectoryTransformerb(HuggingFaceTimeSeriesModel):
         if not test_only:
             print("Starting training of model Trajectory Transformer Classifier ===========================")
             trainer.train()
+        """
+        if test_only:
+            optimizer, lr_scheduler = get_optimizer(self, model, args, 
+                    train_dataset, val_dataset, data_train, train_opts)
+            trainer = self._get_trainer(model, args, train_dataset, 
+                                        val_dataset, optimizer, lr_scheduler)
+        else:
+            # Train model
+            #print("Starting training of model TrajFusionNet ===========================")
+            trainer = self.train_with_initial_vam_branch_disabling(
+                model, epochs, args, train_dataset,
+                val_dataset, data_train, train_opts
+            )
 
         return {
             "trainer": trainer,
             "val_transform": val_transforms_dicts
         }
+
+    def train_with_initial_vam_branch_disabling(self,
+            model: Any, epochs: int, 
+            args: TrainingArguments, train_dataset,
+            val_dataset, data_train: dict, train_opts: dict):
+        
+        best_metric = 0
+        best_trainer = None
+        half_epochs = round(epochs / 2)
+        
+        # Run first part of training procedure with the VAM branch disabled for 15 epochs
+        # to improve learning in the SAM branch.
+        # In order to do this, the weights in the VAM projection layer ('van_output_embed')
+        # as well as the associated learning rate are set to zero
+        with torch.no_grad(): 
+            model.base_model.transformer.van_output_embed.weight.zero_()
+            model.base_model.transformer.van_output_embed.bias.zero_()
+
+        for i in range(half_epochs):
+            
+            # Get custom optimizer to set learning rate to zero in the VAM projection layer
+            optimizer, lr_scheduler = get_optimizer(self, model, args, 
+                train_dataset, val_dataset, data_train, train_opts,
+                disable_vam_branch=True, nb_epochs_disabled=15, epoch_index=i+1)
+            
+            trainer = self._get_trainer(model, args, train_dataset, 
+                                        val_dataset, optimizer, lr_scheduler)
+            trainer.args.num_train_epochs = 1
+            
+            trainer.train()
+
+            if trainer.state.best_metric > best_metric:
+                best_trainer = trainer
+                best_metric = trainer.state.best_metric
+
+        # Run second part of training procedure with the VAM branch re-enabled       
+        optimizer, lr_scheduler = get_optimizer(self, model, args, 
+            train_dataset, val_dataset, data_train, train_opts,
+            disable_vam_branch=False) # learning rate of the VAM projection layer is
+                                      # reset to the global learning rate
+
+        trainer = self._get_trainer(model, args, train_dataset, 
+                                    val_dataset, optimizer, lr_scheduler)
+        trainer.args.num_train_epochs = half_epochs
+
+        trainer.train()
+
+        if trainer.state.best_metric > best_metric:
+            best_trainer = trainer
+            best_metric = trainer.state.best_metric if trainer.state.best_metric else 0
+
+        return best_trainer
+
+    def _get_trainer(self, model, args, train_dataset, 
+                     val_dataset, optimizer, lr_scheduler):
+        trainer = Trainer(
+            model,
+            args,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+            tokenizer=None,
+            compute_metrics=self.compute_metrics,
+            data_collator=self.collate_fn,
+            optimizers=(optimizer, lr_scheduler)
+        )
+        return trainer
 
     def test(self,
              test_data: tuple,
@@ -174,6 +256,7 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         self,
         trajectory_values: torch.Tensor = None,
         normalized_trajectory_values: torch.Tensor = None,
+        video_context: Optional[torch.Tensor] = None,
         labels: torch.Tensor = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None
@@ -193,7 +276,8 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         # Get encoder transformer model output
         outputs = self.transformer(
             trajectory_values,
-            normalized_trajectory_values
+            normalized_trajectory_values,
+            video_context
         )
 
         logits = self.fc1(outputs)
@@ -228,19 +312,16 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         self.traj_TF = load_pretrained_trajectory_transformer(dataset_name,
                                                               submodels_paths=submodels_paths,
                                                               traj_model_path_override=model_opts.get("traj_model_path_override"))
-        """
-        self.traj_tf_speed = load_pretrained_trajectory_tf_only_speed(
+
+        self.van = load_pretrained_van(
             dataset_name,
-            submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
+            is_predicted_overlays=False,
+            add_classification_head=False,
+            #train_layers=True
         )
 
-        self.traj_tf_box = load_pretrained_trajectory_tf_box(
-            dataset_name,
-            submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
-        )
-        """
+        #self.van_enc = nn.Linear(3 * 224 * 224, 40)
+        self.van_output_embed = nn.Linear(512, 40)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -249,6 +330,7 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         self,
         trajectory_values: torch.Tensor,
         normalized_trajectory_values: torch.Tensor,
+        video_context: Optional[torch.Tensor] = None,
         *args,
         **kwargs
     ):
@@ -267,17 +349,6 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
              normalized_trajectory_values=normalized_trajectory_values
         ).logits # [b, 60, 5]
 
-        """
-        predicted_trajectory_box = self.traj_tf_box(
-             normalized_trajectory_values=normalized_trajectory_values[:,:,:4]
-        ).logits
-        predicted_trajectory_speed = self.traj_tf_speed(
-             normalized_trajectory_values=normalized_trajectory_values[:,:,-1]
-        ).logits
-        predicted_trajectory = torch.cat((
-            predicted_trajectory_box, 
-            predicted_trajectory_speed), 2)
-        """
 
         # Crossing prediction ====================================================
 
@@ -292,6 +363,57 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
 
         predicted_trajectory = torch.cat([trajectory_values,
                                           predicted_trajectory], dim=1) # [b, 75, 6]
+
+        # Apply VAN to each sequence index
+        """
+        outputs = []
+        for t in range(video_context.shape[1]):  
+            frame_t = video_context[:, t, :]  
+            out_t = self.van(frame_t).pooler_output      
+            outputs.append(out_t)
+        sequence_output = torch.stack(outputs, dim=1)
+        """
+        van_output_0 = self.van(video_context[:, 0, :, :, :]).pooler_output
+        #van_output_1 = self.van(video_context[:, 1, :, :, :]).pooler_output
+        van_output_2 = self.van(video_context[:, 2, :, :, :]).pooler_output
+        #van_output_3 = self.van(video_context[:, 3, :, :, :]).pooler_output
+        van_output_4 = self.van(video_context[:, 4, :, :, :]).pooler_output
+        #van_output_5 = self.van(video_context[:, 5, :, :, :]).pooler_output
+        van_output_6 = self.van(video_context[:, 6, :, :, :]).pooler_output
+        #van_output_7 = self.van(video_context[:, 7, :, :, :]).pooler_output
+        van_output_8 = self.van(video_context[:, 8, :, :, :]).pooler_output
+        #van_output_9 = self.van(video_context[:, 9, :, :, :]).pooler_output
+        van_output_10 = self.van(video_context[:, 10, :, :, :]).pooler_output
+        #van_output_11 = self.van(video_context[:, 11, :, :, :]).pooler_output
+        van_output_12 = self.van(video_context[:, 12, :, :, :]).pooler_output
+        #van_output_13 = self.van(video_context[:, 13, :, :, :]).pooler_output
+        van_output_14 = self.van(video_context[:, 14, :, :, :]).pooler_output
+
+        sequence_output = torch.stack([
+            van_output_0,
+            van_output_2, van_output_2,
+            van_output_4, van_output_4,
+            van_output_6, van_output_6,
+            van_output_8, van_output_8,
+            van_output_10, van_output_10,
+            van_output_12, van_output_12, 
+            van_output_14, van_output_14
+        ], dim=1)
+
+        """
+        v_flat = sequence_output.view(16, 15, -1)
+        van_encodings = self.van_enc(v_flat)
+        """
+        van_encodings = self.van_output_embed(sequence_output)
+        # , 75, 6+40]
+
+        # Copy last time step into the predicted timesteps
+        last_step = van_encodings[:, -1:, :]
+        repeated = last_step.repeat(1, 60, 1)
+        van_encodings = torch.cat([van_encodings, repeated], dim=1) # [b, 75, 40]
+        
+        #sequence_output = self.van_enc(sequence_output)
+        predicted_trajectory = torch.cat([predicted_trajectory, van_encodings], dim=2) # [b, 75, 6+40]
 
         # Get vanilla transformer model output
         outputs = self.tsl_transformer(

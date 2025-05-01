@@ -115,8 +115,20 @@ class TrajectoryTransformerb(VanillaTransformer,
                  **kwargs):
         super().__init__(**kwargs)
 
+class TrajectoryTransformerbWithVan(VanillaTransformer, 
+                              ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
 class TrajectoryTransformerNoSpeed(VanillaTransformer, 
                                    ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class TrajectoryTransformerOnlySpeed(VanillaTransformer, 
+                                     ActionPredict):
     def __init__(self,
                  **kwargs):
         super().__init__(**kwargs)

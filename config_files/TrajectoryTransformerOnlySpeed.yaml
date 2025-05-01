@@ -1,8 +1,8 @@
 model_opts:
-  model: TrajectoryTransformerNoSpeed
+  model: TrajectoryTransformerOnlySpeed
   apply_class_weights: True
   generator: True
-  obs_input_type: [box]
+  obs_input_type: [speed]
   frameworks:
     pytorch: True
     hugging_faces: True

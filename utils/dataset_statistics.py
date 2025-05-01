@@ -3,7 +3,7 @@ from typing import Any
 
 
 def get_dataset_statistics(data_train: dict, model_opts: dict, 
-                           use_precomputed_values: bool = False) -> dict:
+                           use_precomputed_values: bool = True) -> dict:
     """ Get dataset statistics for various data features (mean, std dev, etc.). 
         Statistics are only computed on training data to avoid data leakage
     Args:
@@ -21,7 +21,8 @@ def get_dataset_statistics(data_train: dict, model_opts: dict,
                     'scene_context': [0.43140541504829, 0.41739486305595647, 0.43278804277937344],
                     'scene_context_doubled': [0.43140541504829, 0.41739486305595647, 0.43278804277937344],
                     'scene_context_non_static': [0.43168591788409766, 0.41768097869166754, 0.43307793210699286],
-                    'scene_context_with_ped_overlays_combined': [0.4301901984398352, 0.42690076535846205, 0.4316534206674368]
+                    'scene_context_with_ped_overlays_combined': [0.4301901984398352, 0.42690076535846205, 0.4316534206674368],
+                    'local_box': [0.11011224069223947, 0.10042360925670331, 0.113358578575617],
                 },
                 "dataset_std_devs": {
                     'scene_context_with_segmentation_v0': [0.017205330101661215], 
@@ -29,7 +30,8 @@ def get_dataset_statistics(data_train: dict, model_opts: dict,
                     'scene_context': [0.29391770977924025, 0.2938884989361296, 0.2861626088201237], 
                     'scene_context_doubled': [0.29391770977924025, 0.2938884989361296, 0.2861626088201237], 
                     'scene_context_non_static': [0.29414961750007607, 0.29414149452145005, 0.28640809656576754],
-                    'scene_context_with_ped_overlays_combined': [0.2992303758909483, 0.3024261744979176, 0.2865064567576991]
+                    'scene_context_with_ped_overlays_combined': [0.2992303758909483, 0.3024261744979176, 0.2865064567576991],
+                    'local_box': [0.15354079266033985, 0.14666361540451084, 0.1599767555115886] 
                 }
             }
         elif model_opts["dataset_full"] == "pie":
@@ -39,14 +41,16 @@ def get_dataset_statistics(data_train: dict, model_opts: dict,
                     'scene_context_with_segmentation_v5': [0.019334776265065773], 
                     'scene_context_with_ped_overlays_combined': [0.440628720401945, 0.4292507260208848, 0.4038140097004474], 
                     'scene_context_with_ped_overlays_previous': [0.4362198059582853, 0.415231076887648, 0.40352444356608014], 
-                    'scene_context_non_static': [0.43955526540739354, 0.41036402920270165, 0.40498522525493474]
+                    'scene_context_non_static': [0.43955526540739354, 0.41036402920270165, 0.40498522525493474],
+                    'local_box': [0.0820003314644778, 0.0819983742481533, 0.08879805281323737]
                 },
                 "dataset_std_devs": {
                     'scene_context_with_segmentation_v0': [0.016403327185491264], 
                     'scene_context_with_segmentation_v5': [0.016449318402970814], 
                     'scene_context_with_ped_overlays_combined': [0.28405485551807624, 0.2639542459273181, 0.24111443759504633], 
                     'scene_context_with_ped_overlays_previous': [0.27642635889627565, 0.2513282281173903, 0.24122525908505713], 
-                    'scene_context_non_static': [0.27419735941404255, 0.24653309211399166, 0.24074212125307612]
+                    'scene_context_non_static': [0.27419735941404255, 0.24653309211399166, 0.24074212125307612],
+                    'local_box': [0.13943468852625082, 0.14117864963143234, 0.15075024342837487]
                 }
             }
         else:
@@ -71,7 +75,9 @@ def get_dataset_statistics(data_train: dict, model_opts: dict,
         for item in data_train["data"][0]:
             for t_idx, data_type in enumerate(data_train["data_params"]["data_types"]):
                 # Do not calculate statistics if data type is not image-like
-                if (type(item) is tuple or len(item.shape) <= 3) and \
+                if data_type == "local_box":
+                    _calculate_stats_for_img_like_data(data_type, means, std_devs, item, t_idx)
+                elif (type(item) is tuple or len(item.shape) <= 3) and \
                     "context" not in data_type:
                     continue
                 else:
@@ -137,10 +143,17 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
             dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 126.0, 1864.0, 350.0] # 0.9979166666666667] # 0.7694444444444445, 0.9994791666666667, 0.9990740740740741, 4.0
             dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -189.0, -1655.0, -120.0] # 0.0] # 0.31203703703703706, 0.0078125, 0.4546296296296296, 0.0
         
+            """
             dataset_statistics["dataset_means"]["trajectory"] = [-7.817597278751057, -2.797630704496746, 0.7966554592107592, 15.765265538056195, 2.4889659647260074]
             dataset_statistics["dataset_std_devs"]["trajectory"] = [161.24783689412033, 14.863155394437634, 161.40917654572766, 29.585598109148503, 1.4469956924143323]
             dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 126.0, 1864.0, 350.0, 4.0]
             dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -189.0, -1655.0, -120.0, 0.0]
+
+            dataset_statistics["dataset_means"]["trajectory"] = [2.4889659647260074]
+            dataset_statistics["dataset_std_devs"]["trajectory"] = [1.4469956924143323]
+            dataset_statistics["dataset_maxs"]["trajectory"] = [4.0]
+            dataset_statistics["dataset_mins"]["trajectory"] = [0.0]
+            """
 
         elif model_opts["dataset_full"] == "jaad_beh":
 
@@ -155,6 +168,16 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
             dataset_statistics["dataset_std_devs"]["trajectory"] = [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553] # 9.758136061619542] # [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553, 9.758136061619542]
             dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995] # 54.00958464000001] # [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 54.00958464000001]
             dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002] # 0.0] # [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0]
+
+            dataset_statistics["dataset_means"]["trajectory"] = [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626, 6.55515245931165]
+            dataset_statistics["dataset_std_devs"]["trajectory"] = [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553, 9.758136061619542]
+            dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 54.00958464000001]
+            dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0]
+
+            #dataset_statistics["dataset_means"]["trajectory"] = [6.55515245931165]
+            #dataset_statistics["dataset_std_devs"]["trajectory"] = [9.758136061619542]
+            #dataset_statistics["dataset_maxs"]["trajectory"] = [54.00958464000001]
+            #dataset_statistics["dataset_mins"]["trajectory"] = [0.0]
 
         elif model_opts["dataset_full"] == "combined":
 
