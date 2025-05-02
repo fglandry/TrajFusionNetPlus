@@ -49,7 +49,7 @@ class TrajectoryTransformerbWithVan(HuggingFaceTimeSeriesModel):
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][0]
-        encoder_input_size = 45 # data_element.shape[-1] + 40
+        encoder_input_size = 10 # data_element.shape[-1] + 40
         seq_len = 75 # data_element.shape[-2] + PRED_LEN # 75
         
         # Get hyperparameters if specified for training run
@@ -137,6 +137,7 @@ class TrajectoryTransformerbWithVan(HuggingFaceTimeSeriesModel):
         best_trainer = None
         half_epochs = round(epochs / 2)
         
+        """
         # Run first part of training procedure with the VAM branch disabled for 15 epochs
         # to improve learning in the SAM branch.
         # In order to do this, the weights in the VAM projection layer ('van_output_embed')
@@ -161,6 +162,7 @@ class TrajectoryTransformerbWithVan(HuggingFaceTimeSeriesModel):
             if trainer.state.best_metric > best_metric:
                 best_trainer = trainer
                 best_metric = trainer.state.best_metric
+        """
 
         # Run second part of training procedure with the VAM branch re-enabled       
         optimizer, lr_scheduler = get_optimizer(self, model, args, 
@@ -321,7 +323,7 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         )
 
         #self.van_enc = nn.Linear(3 * 224 * 224, 40)
-        self.van_output_embed = nn.Linear(512, 40)
+        self.van_output_embed = nn.Linear(512, 5)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -430,12 +432,14 @@ def load_pretrained_encoder_transformer(dataset_name: str,
                                         add_classification_head: bool = True,
                                         submodels_paths: dict = None):
     config_for_encoder_tf = get_config_for_timeseries_lib(
-            encoder_input_size=5, seq_len=75, hyperparams={})
+            encoder_input_size=8, seq_len=75, hyperparams={})
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
     else:
         if dataset_name in ["pie", "combined"]:
-            checkpoint = "data/models/pie/TrajectoryTransformerb/weights_trajectorytransformerb_pie"
+            #checkpoint = "data/models/pie/TrajectoryTransformerb/weights_trajectorytransformerb_pie"
+            checkpoint = "data/models/pie/TrajectoryTransformerbWithVan/30Apr2025-20h20m36s/checkpoint-598"
+            checkpoint = "data/models/pie/TrajectoryTransformerbWithVan/01May2025-21h49m57s/checkpoint-8970"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
         elif dataset_name == "jaad_beh":
