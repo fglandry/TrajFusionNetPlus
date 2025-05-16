@@ -13,6 +13,7 @@ struct = generate_binary_structure(2,2)
 def get_vehicle_traffic_element(data, i, t, model, map, scene_context,
                                 map_size, occurences, 
                                 graphormer_encoding=True,
+                                trajectories=False,
                                 debug=False):
     veh_idx = 13
     
@@ -26,19 +27,23 @@ def get_vehicle_traffic_element(data, i, t, model, map, scene_context,
 
     occurences = _get_occurences_of_vehicles(data, i, t, model, map, 
                     scene_context, map_size, veh_idx, occurences, 
-                    graphormer_encoding, debug)
+                    graphormer_encoding, 
+                    trajectories=trajectories,
+                    debug=debug)
 
     return occurences
 
 def _get_occurences_of_vehicles(data, i, t, model, map, scene_context,
                                 map_size, veh_idx, occurences, 
                                 graphormer_encoding,
+                                trajectories=False,
                                 debug=False):
     
     MAX_DIST = int(math.hypot(map.shape[0], map.shape[1]))
     min_coord = [-1, -1]
     min_angle = math.pi
-    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size)
+    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size,
+                                            trajectories=trajectories)
         
     # Get vehicles mask
     map = copy.deepcopy(map)

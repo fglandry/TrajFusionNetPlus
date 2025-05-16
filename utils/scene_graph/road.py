@@ -12,6 +12,7 @@ struct = generate_binary_structure(2,2)
 def get_road_traffic_element(data, i, t, model, map, scene_context,
                              map_size, occurences,
                              graphormer_encoding=True,
+                             trajectories=False,
                              debug=False):
     road_idx = 0
         
@@ -21,7 +22,8 @@ def get_road_traffic_element(data, i, t, model, map, scene_context,
         display_map = copy.deepcopy(map)
         model.display_segmentation_map(display_map, img, unique_label_to_show=road_idx)
 
-    ped_coord = _get_seg_map_scaled_ped_coords(data, i, t, map_size)
+    ped_coord = _get_seg_map_scaled_ped_coords(data, i, t, map_size,
+                                               trajectories=trajectories)
 
     road_cm_coord, road_cm_dist, road_cm_angle, road_min_coord, \
         road_min_dist, road_min_angle, ped_sem_category = \

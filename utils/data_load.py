@@ -92,7 +92,14 @@ def _get_target_data(data: dict, model_opts: dict):
         target = np.concatenate((data['crossing'], tte_pos), axis=1)
         return target
     elif model_opts["seq_type"] == "trajectory":
-        return data['trajectories']
+        if "scene_graph_v2" in model_opts["obs_input_type"]:
+            node_edge_idxs = [0,3,5,6,10,12,13]
+            labels = data['trajectories_graphs']
+            labels = labels[:,:,node_edge_idxs,:]
+            labels = labels.reshape(labels.shape[0], labels.shape[1], 14)
+            return labels
+        else:
+            return data['trajectories']
     else:
         return data['crossing']
 

@@ -232,10 +232,14 @@ class TorchTimeseriesDataset(Dataset):
         elif "scene_video" in self.data.input_type_list[0] or "local_box_video" in self.data.input_type_list[0]:
             self.video_sequential_context = True
             self.video_data = False
-        elif "scene_graph" in self.data.input_type_list and "scene_graph_doubled" in self.data.input_type_list:
-            self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
-            self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
-            self.video_data = False
+        elif "scene_graph" in self.data.input_type_list:
+            if "scene_graph_doubled" in self.data.input_type_list:
+                self.timeseries_context = "scene_graph" in self.data.input_type_list[2]
+                self.timeseries_double_context = "scene_graph_doubled" in self.data.input_type_list[3]
+                self.video_data = False
+            else:
+                self.timeseries_context = "scene_graph" in self.data.input_type_list[0]
+                self.video_data = False
         elif len(self.data.input_type_list) == 2:
             self.context_image = True
             self.model_type = "TrajectoryTransformerV3"
@@ -358,8 +362,9 @@ class TorchTimeseriesDataset(Dataset):
         
         # If we have forecast labels ...
         if label.shape[-1] > 1:
-            label = normalize_trajectory_data(label, normalization_type, 
-                                              dataset_statistics=dataset_statistics)
+            if label.shape[1] not in [14, 30]: # we don't have graph labels
+                label = normalize_trajectory_data(label, normalization_type, 
+                                                  dataset_statistics=dataset_statistics)
 
         # Extract tte labels from labels variable
         if label.shape[0] > 1:
@@ -381,6 +386,7 @@ class TorchTimeseriesDataset(Dataset):
 
     def _get_timeseries_context_item(self, index: int, 
                                      get_double_context_from_previous_index: bool = False):
+        
         item = self.data[index]
         item = item[0] if self.data_type!='test' else item[0]
 
@@ -392,6 +398,8 @@ class TorchTimeseriesDataset(Dataset):
             obs_input_type_index = 2 # 'scene_graph'
         elif self.scene_video_with_segmentation:
             obs_input_type_index = 1
+        elif len(item) == 2: # TrajectoryTransformerbgraph
+            obs_input_type_index = 0
         context_item = np.asarray(item[obs_input_type_index])
 
         context_item = np.squeeze(context_item) 

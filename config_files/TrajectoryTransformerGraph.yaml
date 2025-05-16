@@ -1,15 +1,17 @@
 model_opts:
-  model: TrajectoryTransformer
+  model: TrajectoryTransformerGraph
   apply_class_weights: True
   generator: True
-  obs_input_type: [box, speed]
+  obs_input_type: [scene_video_with_segmentation_v0,
+                   scene_graph_v2,
+                   box, normalized_abs_box, speed]
   frameworks:
     pytorch: True
     hugging_faces: True
     multi-gpu: False
   process_input_features:
     enabled: True
-    indexes_to_stack: [0, 1]
+    indexes_to_stack: [2, 3, 4]
     static_features_indexes: []
 exp_opts:
   datasets: [pie]

@@ -3,7 +3,7 @@ from typing import Any
 
 
 def get_dataset_statistics(data_train: dict, model_opts: dict, 
-                           use_precomputed_values: bool = True) -> dict:
+                           use_precomputed_values: bool = False) -> dict:
     """ Get dataset statistics for various data features (mean, std dev, etc.). 
         Statistics are only computed on training data to avoid data leakage
     Args:
@@ -169,10 +169,15 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
             dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995] # 54.00958464000001] # [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 54.00958464000001]
             dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002] # 0.0] # [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0]
 
-            dataset_statistics["dataset_means"]["trajectory"] = [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626, 6.55515245931165]
-            dataset_statistics["dataset_std_devs"]["trajectory"] = [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553, 9.758136061619542]
-            dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 54.00958464000001]
-            dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0]
+            dataset_statistics["dataset_means"]["trajectory"] = [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626] # 6.55515245931165]
+            dataset_statistics["dataset_std_devs"]["trajectory"] = [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553] # 9.758136061619542]
+            dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995] # 54.00958464000001]
+            dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002] # 0.0]
+
+            #dataset_statistics["dataset_means"]["trajectory"] = [-0.5568219597392173, -3.7699375720990185, 4.299549196734085, 9.470286313861626, 0.4533823029685946, 0.6542094064638576, 0.4783747463201587, 0.7820043550188241, 6.55515245931165]
+            #dataset_statistics["dataset_std_devs"]["trajectory"] = [135.28868689619418, 16.119308817130346, 136.77957278484664, 23.87334432431553, 0.24557459621324632, 0.04657779813118662, 0.247045692814803, 0.06424173232641271, 9.758136061619542]
+            #dataset_statistics["dataset_maxs"]["trajectory"] = [1672.3000000000002, 221.32, 1728.14, 285.05999999999995, 0.9975, 0.7908796296296297, 1.0, 1.0, 54.00958464000001]
+            #dataset_statistics["dataset_mins"]["trajectory"] = [-1575.76, -407.0899999999999, -1589.8, -217.10000000000002, 0.0, 0.33631481481481484, 0.00321875, 0.6289166666666667, 0.0]
 
             #dataset_statistics["dataset_means"]["trajectory"] = [6.55515245931165]
             #dataset_statistics["dataset_std_devs"]["trajectory"] = [9.758136061619542]

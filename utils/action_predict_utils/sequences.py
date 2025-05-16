@@ -72,7 +72,7 @@ def combine_beh_seq(beh_seq_jaad, beh_seq_pie):
 
 def compute_sequences(d: dict, data_raw: dict, opts: dict, 
                       obs_length: int, time_to_event: list, olap_res: int,
-                      add_normalized_abs_box: bool = False, 
+                      add_normalized_abs_box: bool = True, 
                       add_box_center_speed: bool = False,
                       action_predict_obj_ref = None):
     """ Compute sequences (t=16) from pedestrian tracks
@@ -90,6 +90,8 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
         add_box_center_speed [bool]: add bounding box center speed to sequence data dictionary
     """
     trajectories = []
+    trajectories_imgs = []
+    trajectories_normalized_abs = []
 
     if add_normalized_abs_box:
         d['normalized_abs_box_org'] = copy.deepcopy(d['box_org'])
@@ -104,8 +106,8 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
         for seq_idx, seq in enumerate(d[k]):
             if opts.get("seq_type")=="trajectory":
                 TRAJECTORY_PREDICTION_LENGTH = 60
-                start_idx = 0
                 end_idx = len(seq) - obs_length - TRAJECTORY_PREDICTION_LENGTH
+                start_idx = end_idx - 60 if (end_idx - 60) >= 0 else 0 # TODO: change back
                 seqs.extend([seq[i:i + obs_length] for i in
                                 range(start_idx, end_idx + 1, olap_res)])
                 if k == "box_org":
@@ -114,7 +116,8 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
                     if add_normalized_abs_box:
                         normalized_abs_box_seq = d["normalized_abs_box_org"][seq_idx]
                         # combined_seq = [s + normalized_abs_box_seq[idx] + speed_seq[idx] for idx, s in enumerate(seq)]
-                        combined_seq = [normalized_abs_box_seq[idx] for idx, s in enumerate(seq)]
+                        combined_seq_normalized_abs = [normalized_abs_box_seq[idx] for idx, s in enumerate(seq)]
+                        combined_seq = [s + speed_seq[idx] for idx, s in enumerate(seq)]
                     elif add_box_center_speed:
                         box_center_speed_seq = d["box_center_speed"][seq_idx]
                         combined_seq = [s + box_center_speed_seq[idx] + speed_seq[idx] for idx, s in enumerate(seq)]
@@ -123,9 +126,15 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
                         combined_seq = [s + speed_seq[idx] for idx, s in enumerate(seq)]
 
                     # Get trajectory following observation length
-                    start_idx = 0
                     end_idx = len(seq) - obs_length - TRAJECTORY_PREDICTION_LENGTH
+                    start_idx = end_idx - 60 if (end_idx - 60) >= 0 else 0
                     trajectories.extend([combined_seq[i+obs_length-1:i+obs_length+TRAJECTORY_PREDICTION_LENGTH] \
+                                        for i in range(start_idx, end_idx + 1, olap_res)])
+                    img_seq = d["img_org"][seq_idx]
+                    trajectories_imgs.extend([img_seq[i+obs_length-1:i+obs_length+TRAJECTORY_PREDICTION_LENGTH] \
+                                        for i in range(start_idx, end_idx + 1, olap_res)])
+                    if add_normalized_abs_box:
+                        trajectories_normalized_abs.extend([combined_seq_normalized_abs[i+obs_length-1:i+obs_length+TRAJECTORY_PREDICTION_LENGTH] \
                                         for i in range(start_idx, end_idx + 1, olap_res)])
                     for idx, t in enumerate(trajectories):
                         if len(t) != TRAJECTORY_PREDICTION_LENGTH+1:
@@ -139,6 +148,10 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
         d[k] = seqs
     if opts.get("seq_type")=="trajectory":
         d["trajectories"] = trajectories
+        d["trajectories_org"] = copy.deepcopy(trajectories)
+        d["trajectories_imgs"] = trajectories_imgs
+        if add_normalized_abs_box:
+            d["trajectories_normalized_abs"] = trajectories_normalized_abs
 
     for seq in data_raw['bbox']:
         start_idx = len(seq) - obs_length - time_to_event[1]

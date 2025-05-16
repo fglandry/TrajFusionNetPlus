@@ -109,7 +109,19 @@ class TrajectoryTransformer(VanillaTransformer,
                  **kwargs):
         super().__init__(**kwargs)
 
+class TrajectoryTransformerGraph(VanillaTransformer, 
+                                 ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
 class TrajectoryTransformerb(VanillaTransformer, 
+                              ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class TrajectoryTransformerbgraph(VanillaTransformer, 
                               ActionPredict):
     def __init__(self,
                  **kwargs):
@@ -134,6 +146,12 @@ class TrajectoryTransformerOnlySpeed(VanillaTransformer,
         super().__init__(**kwargs)
 
 class TrajectoryTransformerbNoSpeed(VanillaTransformer, 
+                                   ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class TrajectoryTransformerbgraphNoSpeed(VanillaTransformer, 
                                    ActionPredict):
     def __init__(self,
                  **kwargs):
@@ -176,6 +194,12 @@ class TrajFusionNetGraphV1(BaseTransformerModel,
         super().__init__(**kwargs)
 
 class TrajFusionNetGraphV1NoSpeed(BaseTransformerModel, 
+                           ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class TrajFusionNetGraphV2NoSpeed(BaseTransformerModel, 
                            ActionPredict):
     def __init__(self,
                  **kwargs):

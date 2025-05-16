@@ -13,6 +13,7 @@ struct = generate_binary_structure(2,2)
 def get_pedestrians_traffic_element(data, i, t, model, map, scene_context,
                                     map_size, occurences, 
                                     graphormer_encoding=True,
+                                    trajectories=False,
                                     debug=False):
     ped_idx = 11
     
@@ -26,19 +27,23 @@ def get_pedestrians_traffic_element(data, i, t, model, map, scene_context,
 
     occurences = _get_occurences_of_pedestrians(
                     data, i, t, model, map, scene_context, map_size, 
-                    ped_idx, occurences, graphormer_encoding, debug)
+                    ped_idx, occurences, graphormer_encoding, 
+                    trajectories=trajectories,
+                    debug=debug)
 
     return occurences
 
 def _get_occurences_of_pedestrians(data, i, t, model, map, scene_context,
                                    map_size, ped_idx, occurences, 
                                    graphormer_encoding,
+                                   trajectories=False,
                                    debug=False):
     
     MAX_DIST = int(math.hypot(map.shape[0], map.shape[1]))
     min_coord = [-1, -1]
     min_angle = math.pi
-    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size)
+    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size,
+                                            trajectories=trajectories)
         
     # Get pedestrians mask
     map = copy.deepcopy(map)
@@ -143,7 +148,9 @@ def _get_occurences_of_pedestrians(data, i, t, model, map, scene_context,
     return occurences
 
 def get_target_pedestrian_traffic_element(data, i, t, map, map_size, occurences, 
-                                          model_opts, debug=False):
+                                          model_opts, 
+                                          trajectories=False,
+                                          debug=False):
     features = []
 
     """
@@ -155,7 +162,8 @@ def get_target_pedestrian_traffic_element(data, i, t, map, map_size, occurences,
     MAX_DIST = int(math.hypot(map.shape[0], map.shape[1]))
     min_coord = [-1, -1]
     min_angle = math.pi
-    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size)
+    ped_coord, bb_nb_pixels = get_ped_coord(data, i, t, map_size,
+                                            trajectories=trajectories)
 
     features.extend(
         [

@@ -530,6 +530,7 @@ class ActionPredict(object):
         if balance:
             self.balance_data_samples(d, data_raw['image_dimension'][0])
         d['box_org'] = d['box'].copy()
+        d['img_org'] = d['image'].copy()
         d['speed_org'] = d['speed'].copy()
         d['tte'] = []
         d['tte_pos'] = []
@@ -616,7 +617,7 @@ class ActionPredict(object):
                           add_box_center_speed: bool = False,
                           ):
         if (('box' not in k and 'veh' not in k and "tte" not in k and "trajectories" not in k) \
-            or k=='box_org') and k != 'center':
+            or k=='box_org' or k=='trajectories_org') and k != 'center':
             for i in range(len(d[k])):
                 d[k][i] = d[k][i][1:]
         else:
@@ -653,6 +654,9 @@ class ActionPredict(object):
                             d[k][i] = [c + speed_vals[idx] for idx, c in enumerate(d[k][i])]
                         else:
                             d[k][i] = [c for idx, c in enumerate(d[k][i])]
+            elif k == 'trajectories_imgs' or k == 'trajectories_normalized_abs':
+                for i in range(len(d[k])):
+                    d[k][i] = d[k][i][1:]
             elif (k == 'box' and normalization_type == "relative_subtract") \
                 or k == 'center':
                 for i in range(len(d[k])):
@@ -903,7 +907,8 @@ class ActionPredict(object):
     
     def get_context_data(self, model_opts: dict, data: dict, 
                          data_type: str, feature_type: dict,
-                         submodels_paths: dict = None):
+                         submodels_paths: dict = None,
+                         trajectories=None):
         """ Get image-based context data
         Args:
             model_opts [dict]: model options for generating data
@@ -915,7 +920,7 @@ class ActionPredict(object):
         print('\n#####################################')
         print('Generating {} {}'.format(feature_type, data_type))
         print('#####################################')
-        process = model_opts.get('process', True)
+        process = model_opts.get('process', False)
         aux_name = self._get_aux_name(model_opts)
         eratio = model_opts['enlarge_ratio']
 
@@ -960,6 +965,22 @@ class ActionPredict(object):
                                          data['ped_id'],
                                          **data_gen_params)
         elif 'scene_video_' in feature_type:
+            if trajectories:
+                
+                # expand ped_id values
+                repeat_values = data['ped_id'][:, 0:1, :]
+                num_to_add = 60 - data['ped_id'].shape[1]
+                repeated = np.repeat(repeat_values, num_to_add, axis=1)  # shape: [:, 45, 1]
+                ped_id_expanded = np.concatenate([data['ped_id'], repeated], axis=1)  # shape: [:, 60, 1]
+
+                return get_video_context_data(
+                    self, model_opts, data, 
+                    data_gen_params, feature_type, process,
+                    data['trajectories_imgs'],
+                    data['trajectories'],
+                    ped_id_expanded,
+                    submodels_paths=submodels_paths
+                )
             return get_video_context_data(
                 self, model_opts, data, 
                 data_gen_params, feature_type, process,
@@ -1026,10 +1047,10 @@ class ActionPredict(object):
             elif 'segm_map_occurences' in d_type:
                 features, feat_shape = \
                     get_occurences_of_traffic_elements(data, _data, model_opts)
-            elif d_type == 'scene_graph':
+            elif d_type in ['scene_graph', 'scene_graph_v2']:
                 features, feat_shape = \
                     get_scene_graph(data, _data, model_opts,
-                                    data_type=data_type)
+                                    data_type=data_type, action_predict_ref=self)
             elif d_type == 'scene_graph_doubled':
                 features, feat_shape = \
                     get_scene_graph(data, _data, model_opts,
@@ -1040,6 +1061,18 @@ class ActionPredict(object):
             else:
                 features = data[d_type]
                 feat_shape = features.shape[1:]
+            
+            if model_opts["seq_type"] == "trajectory":
+                if 'segmentation' in d_type:
+                    _features, _ = self.get_context_data(model_opts, data, data_type, d_type, 
+                                                                 trajectories=True)
+                    data["trajectories_segm_maps"] = _features
+                if d_type in ['scene_graph', 'scene_graph_v2']:
+                    _features, _ = \
+                        get_scene_graph(data, _data, model_opts,
+                                        data_type=data_type, action_predict_ref=self,
+                                        trajectories=True)
+                    data["trajectories_graphs"] = _features
 
             _data.append(features)
             data_sizes.append(feat_shape)

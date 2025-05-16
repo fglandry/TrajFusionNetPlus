@@ -13,6 +13,7 @@ struct = generate_binary_structure(2,2)
 def get_sidewalk_traffic_element(data, i, t, model, map, scene_context,
                                  map_size, occurences, 
                                  graphormer_encoding=True,
+                                 trajectories=False,
                                  debug=False):
     sidewalk_idx = 1
         
@@ -22,7 +23,8 @@ def get_sidewalk_traffic_element(data, i, t, model, map, scene_context,
         display_map = copy.deepcopy(map)
         model.display_segmentation_map(display_map, img, unique_label_to_show=sidewalk_idx)
 
-    ped_coord = _get_seg_map_scaled_ped_coords(data, i, t, map_size)
+    ped_coord = _get_seg_map_scaled_ped_coords(data, i, t, map_size,
+                                               trajectories=trajectories,)
 
     occurences = _get_occurences_of_sidewalks(
                     i, model, map, scene_context,
