@@ -43,7 +43,7 @@ class TrajectoryTransformerGraph(HuggingFaceTimeSeriesModel):
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][1]
-        encoder_input_size = 14 # data_element.shape[-1]
+        encoder_input_size = 30 # 14 # data_element.shape[-1]
         seq_len = data_element.shape[-2]
         
         # Get hyperparameters if specified for training run
@@ -175,9 +175,10 @@ class VanillaTransformerForForecast(TimeSeriesTransformerPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # Merge last two dimensions
-        node_edge_idxs = [0,3,5,6,10,12,13]
-        timeseries_context = timeseries_context[:,:,node_edge_idxs,:]
-        timeseries_context =  timeseries_context.view(timeseries_context.size(0), 15, 14)
+        nodes_dim = 30 # 14
+        #node_edge_idxs = [0,3,5,6,10,12,13]
+        #timeseries_context = timeseries_context[:,:,node_edge_idxs,:]
+        timeseries_context =  timeseries_context.view(timeseries_context.size(0), 15, nodes_dim)
         # labels =  labels.view(labels.size(0), 60, 30)
 
         # Create tensor of size [batch, seq_len+pred_len, enc] with trajectory values
@@ -243,7 +244,7 @@ def load_pretrained_trajectory_transformer(dataset_name: str,
                                            submodels_paths=None,
                                            traj_model_path_override: str = None):
     config_for_trajectory_predictor = get_config_for_timeseries_lib(
-        encoder_input_size=14, seq_len=15, hyperparams={}, pred_len=60)
+        encoder_input_size=30, seq_len=15, hyperparams={}, pred_len=60)
     if traj_model_path_override:
         checkpoint = traj_model_path_override
     elif submodels_paths:
@@ -252,7 +253,7 @@ def load_pretrained_trajectory_transformer(dataset_name: str,
         if dataset_name in ["pie", "combined"]:
             #checkpoint = "data/models/pie/TrajectoryTransformer/weights_trajectorytransformer_pie"
             checkpoint = "data/models/pie/TrajectoryTransformerGraph/10May2025-20h30m51s_TTG1/checkpoint-2115"
-            checkpoint = "data/models/pie/TrajectoryTransformerGraph/14May2025-17h19m52s_TTG2/checkpoint-2679"
+            #checkpoint = "data/models/pie/TrajectoryTransformerGraph/14May2025-17h19m52s_TTG2/checkpoint-2679"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
         elif dataset_name == "jaad_beh":

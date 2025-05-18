@@ -223,6 +223,12 @@ EDGE_NODE_VALS = {
         "node_num": 8,
         "edge_num": 7
     },
+    "scene_graph_3": {
+        "edge_indices": [[0, 0], [1, 1], [2, 2], [3, 3], # scene_graph_nodes  
+                        [0, 1], [0, 2], [0, 3]], # scene_graph_edges
+        "node_num": 4,
+        "edge_num": 3
+    },
     "scene_graph_combined": {
         "edge_indices": [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4],
                         [5, 5], [6, 6], [7, 7], # scene_graph_nodes_0

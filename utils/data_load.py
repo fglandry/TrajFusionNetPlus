@@ -93,10 +93,11 @@ def _get_target_data(data: dict, model_opts: dict):
         return target
     elif model_opts["seq_type"] == "trajectory":
         if "scene_graph_v2" in model_opts["obs_input_type"]:
-            node_edge_idxs = [0,3,5,6,10,12,13]
+            #node_edge_idxs = [0,3,5,6,10,12,13]
             labels = data['trajectories_graphs']
-            labels = labels[:,:,node_edge_idxs,:]
-            labels = labels.reshape(labels.shape[0], labels.shape[1], 14)
+            #labels = labels[:,:,node_edge_idxs,:]
+            #labels = labels.reshape(labels.shape[0], labels.shape[1], 14)
+            labels = labels.reshape(labels.shape[0], labels.shape[1], 30)
             return labels
         else:
             return data['trajectories']

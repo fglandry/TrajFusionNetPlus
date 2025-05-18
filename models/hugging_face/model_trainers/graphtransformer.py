@@ -289,6 +289,8 @@ class GraphEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         # last_timeseries_context = timeseries_context[:,-1,:,:] # all features are the same along the 1th dimension
         # first_timeseries_context = timeseries_context[:,0,:,:]
         # middle_timeseries_context = timeseries_context[:,8,:,:]
+        # node_edge_idxs = [0,3,5,6,10,12,13]
+        # timeseries_context = timeseries_context[:,:,node_edge_idxs,:]
 
         """
         nodes = torch.cat((timeseries_context[:,0,:,:][:,0:8,:],
@@ -492,7 +494,8 @@ def load_pretrained_graph_transformer(dataset_name: str,
             checkpoint = "data/models/combined/GraphTransformer/09Apr2025-16h37m56s_CO9"
         if dataset_name in "pie":
             #checkpoint = "data/models/pie/TrajectoryTransformerb/weights_trajectorytransformerb_pie"
-            checkpoint = "data/models/pie/GraphTransformer/14Feb2025-23h32m24s_GT3"
+            #checkpoint = "data/models/pie/GraphTransformer/14Feb2025-23h32m24s_GT3"
+            checkpoint = "data/models/pie/GraphTransformer/17May2025-09h45m07s_GT4"
         elif dataset_name == "jaad_all":
             #checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
             #checkpoint = "data/models/jaad_all/GraphTransformer/13Feb2025-15h40m43s_GT2"

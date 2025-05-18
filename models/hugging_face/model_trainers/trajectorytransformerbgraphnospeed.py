@@ -385,7 +385,8 @@ def load_pretrained_encoder_transformer(dataset_name: str,
         if dataset_name in ["pie", "combined"]:
             checkpoint = "data/models/combined/TrajectoryTransformerbgraphNoSpeed/15May2025-20h50m31s_C12"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
+            #checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
+            checkpoint = "data/models/combined/TrajectoryTransformerbgraphNoSpeed/15May2025-20h50m31s_C12"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 
