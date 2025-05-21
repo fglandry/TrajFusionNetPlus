@@ -136,11 +136,15 @@ def run(config_file: str = None,
             get_trajectory_sequences(configs, free_memory,
                                      compute_cross_dataset_test=cross_test)
         
+        model = "trajectorytransformerbgraph"
+        submodel = "EncoderTransformerForClassification"
         model = ""
         submodel = ""
         hyperparams_orchestrator = HyperparamsOrchestrator(tune_hyperparameters, model, submodel)
         for i in range(hyperparams_orchestrator.nb_cases):
             hyperparams = hyperparams_orchestrator.get_next_case()
+            #if i < 4:
+            #    continue
             if hyperparams:
                 print(f"Training model with hyperparams set {i}: {str(hyperparams[model][submodel])}")
             saved_files_path = \
@@ -164,6 +168,7 @@ def train_test_model(configs: dict, beh_seq_train: dict,
                      train_end_to_end: bool = False):
     
     is_huggingface = configs['model_opts'].get("frameworks") and configs['model_opts']["frameworks"]["hugging_faces"]
+    free_memory = False if hyperparams is not None else free_memory
 
     # get the model
     model_configs = copy.deepcopy(configs['net_opts'])

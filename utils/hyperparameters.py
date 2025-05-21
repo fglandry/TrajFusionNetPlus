@@ -2,6 +2,17 @@ import copy
 import itertools
 
 HYPERPARAMS = {
+    "trajectorytransformerbgraph": {
+        "EncoderTransformerForClassification": {
+            "n_heads": [12],
+            "e_layers": [6],
+            "d_ff": [1024],
+            "d_model": [128],
+            "lr": [1.0e-05, 5.0e-06, 1.0e-06],
+            "batch_size": [32, 16, 8],
+            "epochs": [40, 60]
+        }
+    },
     "trajectorytransformerb": {
         "VanillaTransformerForForecastClassification": {
             "n_heads": [12],

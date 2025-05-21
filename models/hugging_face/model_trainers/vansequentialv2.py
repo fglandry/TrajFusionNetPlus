@@ -8,7 +8,7 @@ from transformers import TrainingArguments, Trainer
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTrainedModel
 
 from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransformer
-from libs.time_series_library.models_tsl.Transformer import Model as VanillaTransformerTSLModel
+from libs.time_series_library.models_tsl.TransformerV2 import Model as VanillaTransformerTSLModel
 from models.custom_layers_pytorch import CrossAttention
 from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
 from models.hugging_face.model_trainers.trajectorytransformer import load_pretrained_trajectory_transformer
@@ -73,7 +73,7 @@ class VANSequentialV2(HuggingFaceTimeSeriesModel):
         #config_for_context_timeseries = get_config_for_context_timeseries(
         #    encoder_input_size, context_len, hyperparams)
         
-        encoder_input_size = 1024-1 # 512-1
+        encoder_input_size = 512-1 # 1024-1 # 512-1
         config_for_timeseries_lib = get_config_for_timeseries_lib(
             encoder_input_size, seq_len, hyperparams)
         config_for_huggingface = TimeSeriesTransformerConfig()
@@ -266,11 +266,13 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         )
         self.van_min10 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
-            submodels_paths={"van_path": "data/models/jaad_all/VAN/21Apr2025-17h52m06s_VAN10"}
+            submodels_paths={"van_path": "data/models/jaad_all/VAN/19May2025-13h54m53s_VAN10B"}
+            #submodels_paths={"van_path": "data/models/jaad_all/VAN/21Apr2025-17h52m06s_VAN10"}
         )
         self.van_min5 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
-            submodels_paths={"van_path": "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"}
+            submodels_paths={"van_path": "data/models/jaad_all/VAN/19May2025-12h26m39s_VAN11B"}
+            #submodels_paths={"van_path": "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"}
         )
         self.van_0 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
@@ -326,59 +328,61 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         assert output_hidden_states is None
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        graph_tf_output_0 = self.graph_tf.context_transformer(
-            timeseries_context[:,0,:,:]
-        )
+        #graph_tf_output_0 = self.graph_tf.context_transformer(
+        #    timeseries_context[:,0,:,:]
+        #)
         van_output_0 = self.van_min15(video_context[:,-15,:,:,:]).pooler_output
-        output_0 = torch.cat((van_output_0, graph_tf_output_0), dim=1)
+        #output_0 = torch.cat((van_output_0, graph_tf_output_0), dim=1)
 
         #ctx_tf_output_1 = self.van(timeseries_context[:,1,:,:]).pooler_output
         #ctx_tf_output_2 = self.van(timeseries_context[:,2,:,:]).pooler_output
         #ctx_tf_output_3 = self.van(timeseries_context[:,3,:,:]).pooler_output
         #ctx_tf_output_4 = self.van(timeseries_context[:,4,:,:]).pooler_output
 
-        graph_tf_output_5 = self.graph_tf.context_transformer(
-            timeseries_context[:,5,:,:]
-        )
-        van_output_5 = self.van_min10(video_segmentation[:,-10,:,:,:]).pooler_output
-        output_5 = torch.cat((van_output_5, graph_tf_output_5), dim=1)
+        #graph_tf_output_5 = self.graph_tf.context_transformer(
+        #    timeseries_context[:,5,:,:]
+        #)
+        #van_output_5 = self.van_min10(video_segmentation[:,-10,:,:,:]).pooler_output
+        van_output_5 = self.van_min10(video_context[:,-10,:,:,:]).pooler_output
+        #output_5 = torch.cat((van_output_5, graph_tf_output_5), dim=1)
 
         #ctx_tf_output_6 = self.van(timeseries_context[:,6,:,:]).pooler_output
         #ctx_tf_output_7 = self.van(timeseries_context[:,7,:,:]).pooler_output
         #ctx_tf_output_8 = self.van(timeseries_context[:,8,:,:]).pooler_output
         #ctx_tf_output_9 = self.van(timeseries_context[:,9,:,:]).pooler_output
 
-        graph_tf_output_10 = self.graph_tf.context_transformer(
-            timeseries_context[:,10,:,:]
-        )
-        van_output_10 = self.van_min5(video_segmentation[:,-5,:,:,:]).pooler_output
-        output_10 = torch.cat((van_output_10, graph_tf_output_10), dim=1)
+        #graph_tf_output_10 = self.graph_tf.context_transformer(
+        #    timeseries_context[:,10,:,:]
+        #)
+        #van_output_10 = self.van_min5(video_segmentation[:,-5,:,:,:]).pooler_output
+        van_output_10 = self.van_min5(video_context[:,-5,:,:,:]).pooler_output
+        #output_10 = torch.cat((van_output_10, graph_tf_output_10), dim=1)
 
         #ctx_tf_output_11 = self.van(timeseries_context[:,11,:,:]).pooler_output
         #ctx_tf_output_12 = self.van(timeseries_context[:,12,:,:]).pooler_output
         #ctx_tf_output_13 = self.van(timeseries_context[:,13,:,:]).pooler_output
         
-        graph_tf_output_14 = self.graph_tf.context_transformer(
-            timeseries_context[:,14,:,:]
-        )
+        #graph_tf_output_14 = self.graph_tf.context_transformer(
+        #    timeseries_context[:,14,:,:]
+        #)
         van_output_14 = self.van_0(video_context[:,-1,:,:,:]).pooler_output
-        output_14 = torch.cat((van_output_14, graph_tf_output_14), dim=1)
+        #output_14 = torch.cat((van_output_14, graph_tf_output_14), dim=1)
 
-        ctx_tf_output = torch.stack((output_0,
+        ctx_tf_output = torch.stack((van_output_0,
                                      #ctx_tf_output_1,
                                      #ctx_tf_output_2,
                                      #ctx_tf_output_3,
                                      #ctx_tf_output_4,
-                                     output_5,
+                                     van_output_5,
                                      #ctx_tf_output_6,
                                      #ctx_tf_output_7,
                                      #ctx_tf_output_8,
                                      #ctx_tf_output_9,
-                                     output_10,
+                                     van_output_10,
                                      #ctx_tf_output_11,
                                      #ctx_tf_output_12,
                                      #ctx_tf_output_13,
-                                     output_14), dim=1)
+                                     van_output_14), dim=1)
 
         outputs = self.tsl_transformer(
             x_enc=ctx_tf_output,
@@ -409,7 +413,7 @@ def load_pretrained_van_sequential_v2(dataset_name: str,
     #config_for_encoder_tf = get_config_for_timeseries_lib(
     #        encoder_input_size=512-1, seq_len=15, hyperparams={})
     config_for_encoder_tf = get_config_for_timeseries_lib(
-            encoder_input_size=1024-1, seq_len=4, hyperparams={})
+            encoder_input_size=512-1, seq_len=4, hyperparams={})
     
     #config_for_context_timeseries = get_config_for_context_timeseries(
     #    encoder_input_size=512-1, seq_len=15, hyperparams={})
@@ -426,9 +430,14 @@ def load_pretrained_van_sequential_v2(dataset_name: str,
             checkpoint = "data/models/jaad_all/VANSequential/16Apr2025-18h18m06s/checkpoint-1700"
             checkpoint = "data/models/jaad_all/VANSequential/18Apr2025-11h02m52s/checkpoint-539"
             checkpoint = "data/models/jaad_all/VANSequential/18Apr2025-11h02m52s/checkpoint-7007"
-            checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1/checkpoint-5390"
+            checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1"
+            #checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1/checkpoint-5390"
             #checkpoint = "data/models/jaad_all/VANSequentialV2/27Apr2025-10h50m10s/checkpoint-4312"
-            checkpoint = "data/models/jaad_all/VANSequentialV2/27Apr2025-13h41m45s/checkpoint-4312"
+            #checkpoint = "data/models/jaad_all/VANSequentialV2/27Apr2025-13h41m45s/checkpoint-4312"
+            checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-539"
+            checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-4851"
+            checkpoint = "data/models/jaad_all/VANSequentialV2/21May2025-08h54m54s/checkpoint-5390"
+            checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-21h18m46s_VAS2"
 
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
