@@ -4,13 +4,13 @@ import itertools
 HYPERPARAMS = {
     "trajectorytransformerbgraph": {
         "EncoderTransformerForClassification": {
-            "n_heads": [12],
-            "e_layers": [6],
-            "d_ff": [1024],
-            "d_model": [128],
-            "lr": [1.0e-05, 5.0e-06, 1.0e-06],
-            "batch_size": [32, 16, 8],
-            "epochs": [40, 60]
+            "n_heads": [8, 12, 16],
+            "e_layers": [4, 6, 8], # [4, 6, 8, 12],
+            "d_ff": [512, 1024, 2048],
+            "d_model": [1024], # [128, 256, 512],
+            "lr": [5.0e-06],
+            "batch_size": [8],
+            "epochs": [60]
         }
     },
     "trajectorytransformerb": {

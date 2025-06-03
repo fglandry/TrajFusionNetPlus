@@ -138,12 +138,12 @@ def run(config_file: str = None,
         
         model = "trajectorytransformerbgraph"
         submodel = "EncoderTransformerForClassification"
-        model = ""
-        submodel = ""
+        #model = ""
+        #submodel = ""
         hyperparams_orchestrator = HyperparamsOrchestrator(tune_hyperparameters, model, submodel)
         for i in range(hyperparams_orchestrator.nb_cases):
             hyperparams = hyperparams_orchestrator.get_next_case()
-            #if i < 4:
+            #if i < 12:
             #    continue
             if hyperparams:
                 print(f"Training model with hyperparams set {i}: {str(hyperparams[model][submodel])}")

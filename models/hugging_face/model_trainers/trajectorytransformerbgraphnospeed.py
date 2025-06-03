@@ -64,8 +64,12 @@ class TrajectoryTransformerbgraphNoSpeed(HuggingFaceTimeSeriesModel):
         config_for_huggingface = TimeSeriesTransformerConfig()
         self.num_labels = config_for_huggingface.num_labels
 
+        config_for_context_timeseries = get_config_for_context_timeseries(
+            15, 15, hyperparams)
+
         model = EncoderTransformerForClassification(
             config_for_huggingface, config_for_timeseries_lib,
+            config_for_context_timeseries=config_for_context_timeseries,
             dataset_name=kwargs["model_opts"]["dataset_full"],
             model_opts=kwargs["model_opts"],
             class_w=class_w
@@ -157,6 +161,7 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
     def __init__(self,
                  config_for_huggingface: TimeSeriesTransformerConfig,
                  config_for_timeseries_lib: dict = None,
+                 config_for_context_timeseries: dict = None,
                  dataset_name: str = None,
                  model_opts: dict = None,
                  class_w = None
@@ -169,6 +174,7 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
         self.timeseries_config = config_for_timeseries_lib
 
         self.transformer = EncoderTransformer(config_for_huggingface, config_for_timeseries_lib,
+                                              config_for_context_timeseries=config_for_context_timeseries,
                                               dataset_name=dataset_name,
                                               model_opts=model_opts)
 

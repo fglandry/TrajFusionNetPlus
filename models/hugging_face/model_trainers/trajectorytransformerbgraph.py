@@ -149,7 +149,7 @@ class TrajectoryTransformerbgraph(HuggingFaceTimeSeriesModel):
         print("Starting inference using trained model Trajectory Transformer Classifier ===========================")
 
         if test_only:
-            pretrained_model = load_pretrained_encoder_transformer(dataset_name)
+            pretrained_model = load_pretrained_trajectorytransformerbgraph(dataset_name)
             training_result["trainer"].model = pretrained_model
 
         return test_time_series_based_model(
@@ -347,36 +347,34 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
             timeseries_context.size(0), 15, 2*nb_nodes)
         """
         
-        outputs = []
+        """
+        _outputs = []
+        _slices = []
         for i in range(timeseries_context.size(1)):  
             _slice = timeseries_context[:, i]            
             out = self.graph_tf.context_transformer(_slice)
             # out = self.context_transformer(_slice)         
             enc = self.graph_enc(out)
-            outputs.append(enc)
-        timeseries_context = torch.stack(outputs, dim=1)
+            _outputs.append(enc)
+            _slices.append(_slice)
+        _timeseries_context = torch.stack(_outputs, dim=1)
+        """
 
-        """
-        predicted_graphs = predicted_graphs.view(predicted_graphs.size(0), 60, 15, 2)
         outputs = []
-        for i in range(predicted_graphs.size(1)):  
-            _slice = predicted_graphs[:, i]            
-            out = self.graph_tf.context_transformer(_slice)   
-            enc = self.graph_enc(out)
-            outputs.append(enc)
-        predicted_graphs = torch.stack(outputs, dim=1)
-        """
+        for i in range(timeseries_context.size(1)):
+            if i in [0, 5, 10, 14]:  
+                _slice = timeseries_context[:, i]            
+                out = self.graph_tf.context_transformer(_slice)
+                # out = self.context_transformer(_slice)         
+                enc = self.graph_enc(out)
+                outputs.append(enc)
         
-        """
-        predicted_graphs_original = predicted_graphs.reshape(
-            predicted_graphs.size(0), 60, 15, 2)
-        predicted_graphs = predicted_graphs_original[:,:,node_idxs,:]
-        predicted_graphs = predicted_graphs.reshape(
-            predicted_graphs.size(0), 60, 2*nb_nodes)
-        """
-        
-        #timeseries_context = torch.cat([timeseries_context,
-        #                                edge_context], dim=2)
+        timeseries_context = torch.zeros(timeseries_context.shape[0], 
+                                         timeseries_context.shape[1], outputs[0].shape[-1]).cuda()
+        timeseries_context[:, 11:15, :] = outputs[3].unsqueeze(1).expand(-1, 4, -1)
+        timeseries_context[:, 7:11, :] = outputs[2].unsqueeze(1).expand(-1, 4, -1)
+        timeseries_context[:, 3:7, :] = outputs[1].unsqueeze(1).expand(-1, 4, -1)
+        timeseries_context[:, 0:3, :] = outputs[0].unsqueeze(1).expand(-1, 3, -1)     
 
         batch_size = predicted_trajectory.size(0)
         first_15 = torch.cat([predicted_trajectory[:, :15, :],
@@ -400,7 +398,7 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         return outputs # [b, 40]
 
 
-def load_pretrained_encoder_transformer(dataset_name: str,
+def load_pretrained_trajectorytransformerbgraph(dataset_name: str,
                                         add_classification_head: bool = True,
                                         submodels_paths: dict = None):
     config_for_encoder_tf = get_config_for_timeseries_lib(
@@ -415,9 +413,12 @@ def load_pretrained_encoder_transformer(dataset_name: str,
             checkpoint = "data/models/pie/TrajectoryTransformerbgraph/14May2025-21h21m50s/checkpoint-2700"
             checkpoint = "data/models/pie/TrajectoryTransformerbgraph/14May2025-21h38m26s/checkpoint-17940"
             checkpoint = "data/models/pie/TrajectoryTransformerbgraph/17May2025-14h57m41s_TTB3"
-
+            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/21May2025-14h20m04s_TTB4"
+            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/28May2025-16h10m41s_TRIAL8"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
+            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/21May2025-15h00m56s_TTB5"
+            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/01Jun2025-18h38m19s_TTB6"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 
@@ -457,15 +458,15 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
         "pred_len": pred_len if pred_len else PRED_LEN,
         "output_attention": False, # whether to output attention in encoder; note: not used by vanilla transformer model
         "enc_in": encoder_input_size, # encoder input size - default value,
-        "d_model": hyperparams.get("d_model", 128), # dimension of model - default value 
+        "d_model": hyperparams.get("d_model", 512), # dimension of model - default value 
         "embed": "learned", # time features encoding; note: not used in classification task by vanilla transformer model
         "freq": "h", # freq for time features encoding; note: not used in classification task by vanilla transformer model
         "dropout": 0.1, # default,
         "factor": 1, # attn factor; note: not used by vanilla transformer model
-        "n_heads": hyperparams.get("n_heads", 12), # num of heads
+        "n_heads": hyperparams.get("n_heads", 16), # num of heads
         "d_ff": hyperparams.get("d_ff", 1024), # dimension of fcn (or 2048)
         "activation": "gelu",
-        "e_layers": hyperparams.get("e_layers", 6), # num of encoder layers (or 3)
+        "e_layers": hyperparams.get("e_layers", 4), # num of encoder layers (or 3)
         "seq_len": seq_len, # input sequence length
         "num_class": 40, # number of neurons in last Linear layer at the end of model
         "label_len": 15,

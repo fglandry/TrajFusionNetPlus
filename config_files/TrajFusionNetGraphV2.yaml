@@ -1,5 +1,5 @@
 model_opts:
-  model: VANSequentialV2
+  model: TrajFusionNetGraphV2
   apply_class_weights: True
   generator: True
   obs_input_type: [scene_video_with_segmentation_v0,
@@ -7,7 +7,7 @@ model_opts:
                    scene_graph,
                    scene_context_with_segmentation_v4_with_ped_overlays_combined,
                    scene_video_with_segmentation_v4_with_ped_overlays_combined,
-                   box, speed]
+                   box, veh_speed]
   frameworks:
     pytorch: True
     hugging_faces: True
@@ -17,7 +17,7 @@ model_opts:
     indexes_to_stack: [5, 6]
     static_features_indexes: []
 exp_opts:
-  datasets: [pie]
-  batch_size: [16]
-  epochs: [10]
+  datasets: [jaad_all]
+  batch_size: [8]
+  epochs: [60]
   lr: [5.0e-06]

@@ -193,6 +193,12 @@ class TrajFusionNetGraphV1(BaseTransformerModel,
                  **kwargs):
         super().__init__(**kwargs)
 
+class TrajFusionNetGraphV2(BaseTransformerModel, 
+                           ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
 class TrajFusionNetGraphV1NoSpeed(BaseTransformerModel, 
                            ActionPredict):
     def __init__(self,

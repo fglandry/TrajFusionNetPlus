@@ -260,23 +260,32 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
             #submodels_paths=submodels_paths
         )
         """
+        if dataset_name == "jaad_all":
+            van_min15_path = "data/models/jaad_all/VAN/21Apr2025-12h07m13s_VAN9"
+            van_min10_path = "data/models/jaad_all/VAN/19May2025-13h54m53s_VAN10B" # "data/models/jaad_all/VAN/21Apr2025-17h52m06s_VAN10"
+            van_min5_path = "data/models/jaad_all/VAN/19May2025-12h26m39s_VAN11B" # "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"
+            van_0_path = "data/models/jaad_all/VAN/weights_van1_jaadall"
+        if dataset_name == "pie":
+            van_min15_path = "data/models/pie/VAN/23May2025-22h52m30s_VA14"
+            van_min10_path = "data/models/pie/VAN/23May2025-23h28m50s_VA15"
+            van_min5_path = "data/models/pie/VAN/24May2025-00h23m03s_VA16"
+            van_0_path = "data/models/pie/VAN/24May2025-10h21m43s_VA17"
+
         self.van_min15 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
-            submodels_paths={"van_path": "data/models/jaad_all/VAN/21Apr2025-12h07m13s_VAN9"}
+            submodels_paths={"van_path": van_min15_path}
         )
         self.van_min10 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
-            submodels_paths={"van_path": "data/models/jaad_all/VAN/19May2025-13h54m53s_VAN10B"}
-            #submodels_paths={"van_path": "data/models/jaad_all/VAN/21Apr2025-17h52m06s_VAN10"}
+            submodels_paths={"van_path": van_min10_path}
         )
         self.van_min5 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
-            submodels_paths={"van_path": "data/models/jaad_all/VAN/19May2025-12h26m39s_VAN11B"}
-            #submodels_paths={"van_path": "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"}
+            submodels_paths={"van_path": van_min5_path}
         )
         self.van_0 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
-            submodels_paths={"van_path": "data/models/jaad_all/VAN/weights_van1_jaadall"}
+            submodels_paths={"van_path": van_0_path}
         )
 
         #self.van_channels = load_pretrained_van_sequential(dataset_name,
@@ -285,11 +294,11 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
 
 
         # Get pretrained GraphTransformer model -------------------------------------------
-        self.graph_tf = load_pretrained_graph_transformer(
-            dataset_name,
-            add_classification_head=False,
-            #submodels_paths=submodels_paths
-        )
+        #self.graph_tf = load_pretrained_graph_transformer(
+        #    dataset_name,
+        #    add_classification_head=False,
+        #    #submodels_paths=submodels_paths
+        #)
 
         classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
         self.classifier = nn.Linear(
@@ -424,16 +433,9 @@ def load_pretrained_van_sequential_v2(dataset_name: str,
         if dataset_name == "combined":
             checkpoint = "data/models/combined/GraphTransformer/09Apr2025-16h37m56s_CO9"
         if dataset_name in "pie":
-            #checkpoint = "data/models/pie/TrajectoryTransformerb/weights_trajectorytransformerb_pie"
-            checkpoint = "data/models/pie/GraphTransformer/14Feb2025-23h32m24s_GT3"
+            checkpoint = "data/models/pie/VANSequentialV2/24May2025-11h06m42s_VAS4"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/VANSequential/16Apr2025-18h18m06s/checkpoint-1700"
-            checkpoint = "data/models/jaad_all/VANSequential/18Apr2025-11h02m52s/checkpoint-539"
-            checkpoint = "data/models/jaad_all/VANSequential/18Apr2025-11h02m52s/checkpoint-7007"
             checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1"
-            #checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1/checkpoint-5390"
-            #checkpoint = "data/models/jaad_all/VANSequentialV2/27Apr2025-10h50m10s/checkpoint-4312"
-            #checkpoint = "data/models/jaad_all/VANSequentialV2/27Apr2025-13h41m45s/checkpoint-4312"
             checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-539"
             checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-4851"
             checkpoint = "data/models/jaad_all/VANSequentialV2/21May2025-08h54m54s/checkpoint-5390"
@@ -453,9 +455,9 @@ def load_pretrained_van_sequential_v2(dataset_name: str,
         pretrained_model = VANEncoderTransformer.from_pretrained(
             checkpoint,
             config_for_timeseries_lib=config_for_encoder_tf,
-            config_for_context_timeseries=config_for_context_timeseries,
+            #config_for_context_timeseries=config_for_context_timeseries,
             ignore_mismatched_sizes=True,
-            #dataset_name=dataset_name,
+            dataset_name=dataset_name,
             #submodels_paths=submodels_paths)
         )
     
