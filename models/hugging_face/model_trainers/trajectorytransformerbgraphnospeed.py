@@ -1,3 +1,4 @@
+import copy
 from typing import Optional
 
 import torch
@@ -7,6 +8,7 @@ from transformers import TrainingArguments, Trainer
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTrainedModel
 
 from libs.time_series_library.models_tsl.Transformer import Model as VanillaTransformerTSLModel
+from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
 from models.hugging_face.model_trainers.trajectorytransformergraph import load_pretrained_trajectory_transformer as load_pretrained_graph_trajectory_transformer
 from models.hugging_face.model_trainers.trajectorytransformeronlyspeed import load_pretrained_trajectory_tf_only_speed
 from models.hugging_face.model_trainers.trajectorytransformernospeed import load_pretrained_trajectory_transformer
@@ -236,6 +238,7 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
     def __init__(self,
                  config_for_huggingface: TimeSeriesTransformerConfig,
                  config_for_timeseries_lib: dict,
+                 config_for_context_timeseries = None,
                  dataset_name: str = None,
                  submodels_paths: dict = None,
                  model_opts: dict = None
@@ -252,23 +255,13 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
                                                               submodels_paths=submodels_paths,
                                                               traj_model_path_override=model_opts.get("traj_model_path_override"))
         
-        #self.traj_graph_TF = load_pretrained_graph_trajectory_transformer(
-        #    dataset_name,
-        #    submodels_paths=submodels_paths)
-
-        """
-        self.traj_tf_speed = load_pretrained_trajectory_tf_only_speed(
+        self.graph_tf = load_pretrained_graph_transformer(
             dataset_name,
-            submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
+            add_classification_head=False,
+            #submodels_paths=submodels_paths
         )
 
-        self.traj_tf_box = load_pretrained_trajectory_tf_box(
-            dataset_name,
-            submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
-        )
-        """
+        self.graph_enc = nn.Linear(512, 14)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -314,49 +307,21 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         predicted_trajectory = torch.cat([trajectory_values,
                                           predicted_trajectory], dim=1) # [b, 75, 6]
 
-        # Add predicted trajectory/graphs to observed trajectory/graphs
-        #timeseries_context = timeseries_context.reshape(:, 15, 30)
-        node_idxs = [0,3,5,6]
-        edge_idxs = [10,12,13]
-        node_idxs = node_idxs + edge_idxs
-        nb_nodes = len(node_idxs)
-        # edge_context = timeseries_context[:,:,edge_idxs,1]
-
-        timeseries_context = timeseries_context[:,:,node_idxs,:]
-        timeseries_context = timeseries_context.reshape(
-            timeseries_context.size(0), 15, 2*nb_nodes)
+        outputs = []
+        for i in range(timeseries_context.size(1)):
+            if i in [0, 5, 10, 14]:  
+                _slice = timeseries_context[:, i]            
+                out = self.graph_tf.context_transformer(_slice)
+                # out = self.context_transformer(_slice)         
+                enc = self.graph_enc(out)
+                outputs.append(enc)
         
-        
-        """
-        predicted_graphs_original = predicted_graphs.reshape(
-            predicted_graphs.size(0), 60, 15, 2)
-        predicted_graphs = predicted_graphs_original[:,:,node_idxs,:]
-        predicted_graphs = predicted_graphs.reshape(
-            predicted_graphs.size(0), 60, 2*nb_nodes)
-        """
-        
-        """
-        print([round(x, 3) for x in timeseries_context[0,0,:].flatten().tolist()])
-        print([round(x, 3) for x in timeseries_context[0,2,:].flatten().tolist()])
-        print([round(x, 3) for x in timeseries_context[0,4,:].flatten().tolist()])
-        print([round(x, 3) for x in timeseries_context[0,6,:].flatten().tolist()])
-        print([round(x, 3) for x in timeseries_context[0,8,:].flatten().tolist()])
-        print([round(x, 3) for x in timeseries_context[0,10,:].flatten().tolist()])
-        print([round(x, 3) for x in timeseries_context[0,12,:].flatten().tolist()])
-        print([round(x, 3) for x in timeseries_context[0,14,:].flatten().tolist()])
-        print("--------------")
-        print([round(x, 3) for x in predicted_graphs[0,0,:].flatten().tolist()])
-        print([round(x, 3) for x in predicted_graphs[0,2,:].flatten().tolist()])
-        print([round(x, 3) for x in predicted_graphs[0,4,:].flatten().tolist()])
-        print([round(x, 3) for x in predicted_graphs[0,6,:].flatten().tolist()])
-        print([round(x, 3) for x in predicted_graphs[0,8,:].flatten().tolist()])
-        print([round(x, 3) for x in predicted_graphs[0,10,:].flatten().tolist()])
-        print([round(x, 3) for x in predicted_graphs[0,12,:].flatten().tolist()])
-        print([round(x, 3) for x in predicted_graphs[0,14,:].flatten().tolist()])
-        """
-
-        #timeseries_context = torch.cat([timeseries_context,
-        #                                edge_context], dim=2)
+        timeseries_context = torch.zeros(timeseries_context.shape[0], 
+                                         timeseries_context.shape[1], outputs[0].shape[-1]).cuda()
+        timeseries_context[:, 11:15, :] = outputs[3].unsqueeze(1).expand(-1, 4, -1)
+        timeseries_context[:, 7:11, :] = outputs[2].unsqueeze(1).expand(-1, 4, -1)
+        timeseries_context[:, 3:7, :] = outputs[1].unsqueeze(1).expand(-1, 4, -1)
+        timeseries_context[:, 0:3, :] = outputs[0].unsqueeze(1).expand(-1, 3, -1)     
 
         batch_size = predicted_trajectory.size(0)
         first_15 = torch.cat([predicted_trajectory[:, :15, :],
@@ -380,7 +345,7 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         return outputs # [b, 40]
 
 
-def load_pretrained_encoder_transformer(dataset_name: str,
+def load_pretrained_trajectorytransformerbgraph(dataset_name: str,
                                         add_classification_head: bool = True,
                                         submodels_paths: dict = None):
     config_for_encoder_tf = get_config_for_timeseries_lib(
@@ -388,7 +353,10 @@ def load_pretrained_encoder_transformer(dataset_name: str,
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
     else:
-        if dataset_name in ["pie", "combined"]:
+        if dataset_name == "combined":
+            checkpoint = "data/models/combined/TrajectoryTransformerbgraphNoSpeed/15May2025-20h50m31s_C12"
+            checkpoint = "data/models/combined/TrajectoryTransformerbgraphNoSpeed/03Jun2025-20h58m06s_C14"
+        elif dataset_name == "pie":
             checkpoint = "data/models/combined/TrajectoryTransformerbgraphNoSpeed/15May2025-20h50m31s_C12"
         elif dataset_name == "jaad_all":
             #checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
@@ -432,15 +400,15 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
         "pred_len": pred_len if pred_len else PRED_LEN,
         "output_attention": False, # whether to output attention in encoder; note: not used by vanilla transformer model
         "enc_in": encoder_input_size, # encoder input size - default value,
-        "d_model": hyperparams.get("d_model", 128), # dimension of model - default value 
+        "d_model": hyperparams.get("d_model", 512), # dimension of model - default value 
         "embed": "learned", # time features encoding; note: not used in classification task by vanilla transformer model
         "freq": "h", # freq for time features encoding; note: not used in classification task by vanilla transformer model
         "dropout": 0.1, # default,
         "factor": 1, # attn factor; note: not used by vanilla transformer model
-        "n_heads": hyperparams.get("n_heads", 12), # num of heads
+        "n_heads": hyperparams.get("n_heads", 16), # num of heads
         "d_ff": hyperparams.get("d_ff", 1024), # dimension of fcn (or 2048)
         "activation": "gelu",
-        "e_layers": hyperparams.get("e_layers", 6), # num of encoder layers (or 3)
+        "e_layers": hyperparams.get("e_layers", 4), # num of encoder layers (or 3)
         "seq_len": seq_len, # input sequence length
         "num_class": 40, # number of neurons in last Linear layer at the end of model
         "label_len": 15,
@@ -449,3 +417,49 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
     
     config_for_timeseries_lib = TimeSeriesLibraryConfig(time_series_dict)
     return config_for_timeseries_lib
+
+
+def get_config_for_context_timeseries(encoder_input_size, seq_len, hyperparams, 
+                                      add_graph_context_to_lstm=False):
+
+    hyperparams = hyperparams.get("timeseries_tf", {})
+
+    # time series lib properties
+    time_series_dict = {
+        "task_name": "classification",
+        "graph_type": "scene_graph",
+        "pred_len": 0, # for Timesblock
+        "output_attention": False, # whether to output attention in encoder; note: not used by vanilla transformer model
+        "enc_in": 2, #77, #6161 # 84 # encoder input size - default value,
+        "d_model": 128, # dimension of model - default value 
+        "embed": "learned", # time features encoding; note: not used in classification task by vanilla transformer model
+        "freq": "h", # freq for time features encoding; note: not used in classification task by vanilla transformer model
+        "dropout": 0.1, # default,
+        "factor": 1, # attn factor; note: not used by vanilla transformer model
+        "n_heads": hyperparams.get("n_heads", 12), # num of heads
+        "d_ff": hyperparams.get("d_ff", 1024), # dimension of fcn (or 2048)
+        "activation": "gelu",
+        "e_layers": hyperparams.get("e_layers", 6), # num of encoder layers (or 3)
+        "seq_len": seq_len, # + 20, # input sequence length
+        "num_class": 512, # number of neurons in last Linear layer at the end of model
+        # ---------------------------------------------------------------------------------
+        "label_len": 1, # Timesnet - start token length
+        "num_kernels": 6, # Timesnet - for Inception
+        "top_k": 5, # Timesnet - for TimesBlock
+        "moving_avg": 3, # FEDformer - window size of moving average, default=25
+        "dec_in": 7, # FEDformer - decoder input size
+        "d_layers": 2, # FEDformer - num of decoder layers
+        "c_out": 7, # FEDformer - output size
+        "distil": True, # Informer - whether to use distilling in encoder, using this argument means not using distilling
+        #"c_out": 77, # override - MICN - output size
+        "p_hidden_dims": [128, 128], # Nonstationary transformer - hidden layer dimensions of projector (List)
+        "p_hidden_layers": 2, # Nonstationary transformer - number of hidden layers in projector
+        # "num_kernels": 3, # override - Pyraformer
+    }
+    
+    config_for_timeseries_lib = TimeSeriesLibraryConfig(time_series_dict)
+    time_series_dict_0 = copy.deepcopy(time_series_dict)
+    time_series_dict_0["enc_in"] = encoder_input_size
+    time_series_dict_0["task_name"] = "encoding"
+    config_for_timeseries_lib_0 = TimeSeriesLibraryConfig(time_series_dict_0)
+    return config_for_timeseries_lib_0, config_for_timeseries_lib

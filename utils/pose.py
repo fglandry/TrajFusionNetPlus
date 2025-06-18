@@ -39,8 +39,8 @@ HRNET_MODEL = None
 
 def get_pose_keypoints(model_opts,
                        img,
-                       use_openpose=False,
-                       use_hrnet=True,
+                       use_openpose=True,
+                       use_hrnet=False,
                        debug=False):
     
     keep_most_stable_keypoints = True
@@ -64,7 +64,8 @@ def get_pose_keypoints(model_opts,
     photo_width=img.shape[1]
 
     if use_openpose:
-        most_stable_keypoints = MOST_STABLE_KEYPOINTS
+        #most_stable_keypoints = MOST_STABLE_KEYPOINTS
+        keep_most_stable_keypoints = False
         points = get_keypoints_using_openpose(
             img, photo_height, photo_width,
             weights="weights/graph_opt.pb",

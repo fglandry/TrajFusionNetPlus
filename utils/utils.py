@@ -89,7 +89,7 @@ def get_pose(model_opts,
     set_poses = {}
     for s in set_poses_list:
         p = open_pickle_file(s) if not do_not_keep_in_memory else s
-        if dataset == 'pie':
+        if dataset in ['pie', 'combined']:
             set_id = s.split('/')[-3]
         elif dataset == 'jaad':
             set_id = 'set01'
@@ -108,7 +108,7 @@ def get_pose(model_opts,
         for imp, p in zip(seq, pid):
             flip_image = False
             
-            if dataset == 'pie':
+            if dataset in ['pie', 'combined']:
                 set_id = imp.split('/')[-3]
             elif dataset == 'jaad':
                 set_id = 'set01'
@@ -225,7 +225,7 @@ def create_pose_from_img_path(
             else:
                 raise Exception()
 
-            if model_opts["process_input_features"].get("super_resolution"):
+            if model_opts.get("process_input_features", {}).get("super_resolution"):
                 raise Exception("Not implemented in this repo")
             else:
                 new_img_features = img_features

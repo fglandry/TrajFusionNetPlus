@@ -2181,7 +2181,8 @@ class PCPA(ActionPredict):
         assert self._backbone in ['c3d', 'i3d'], 'Incorrect backbone {}! Should be C3D or I3D'.format(self._backbone)
         self._3dconv = C3DNet if self._backbone == 'c3d' else I3DNet
 
-    def get_data(self, data_type, data_raw, model_opts):
+    def get_data(self, data_type, data_raw, model_opts,
+                 *args, **kwargs):
         assert model_opts['obs_length'] == 16
         model_opts['normalize_boxes'] = False
         self._generator = model_opts.get('generator', False)
@@ -2213,6 +2214,7 @@ class PCPA(ActionPredict):
                                            save_root_folder='data/features')
                 features, _ = get_pose(model_opts,
                                     data['image'],
+                                    data['box_org'],
                                     data['ped_id'],
                                     data_type=data_type,
                                     file_path=path_to_pose,

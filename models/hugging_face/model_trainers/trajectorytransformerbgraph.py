@@ -8,7 +8,7 @@ from transformers import TrainingArguments, Trainer
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTrainedModel
 
 from libs.time_series_library.models_tsl.Transformer import Model as VanillaTransformerTSLModel
-from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer, EncoderTransformer as GraphTransformer
+from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
 from models.hugging_face.model_trainers.trajectorytransformer import load_pretrained_trajectory_transformer
 from models.hugging_face.model_trainers.trajectorytransformergraph import load_pretrained_trajectory_transformer as load_pretrained_graph_trajectory_transformer
 from models.hugging_face.model_trainers.trajectorytransformeronlyspeed import load_pretrained_trajectory_tf_only_speed
@@ -255,38 +255,14 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         self.traj_TF = load_pretrained_trajectory_transformer(dataset_name,
                                                               submodels_paths=submodels_paths,
                                                               traj_model_path_override=model_opts.get("traj_model_path_override"))
-        
-        """
-        self.traj_graph_TF = load_pretrained_graph_trajectory_transformer(
-            dataset_name,
-            submodels_paths=submodels_paths)
-        """
 
         self.graph_tf = load_pretrained_graph_transformer(
             dataset_name,
             add_classification_head=False,
             #submodels_paths=submodels_paths
         )
-        """
-        self.context_transformer = GraphTransformer(
-            config_for_huggingface, config_for_context_timeseries)
-        """
 
         self.graph_enc = nn.Linear(512, 14)
-
-        """
-        self.traj_tf_speed = load_pretrained_trajectory_tf_only_speed(
-            dataset_name,
-            submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
-        )
-
-        self.traj_tf_box = load_pretrained_trajectory_tf_box(
-            dataset_name,
-            submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
-        )
-        """
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -314,11 +290,6 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
              normalized_trajectory_values=normalized_trajectory_values
         ).logits # [b, 60, 5]
 
-        """
-        predicted_graphs = self.traj_graph_TF(
-             timeseries_context=timeseries_context
-        ).logits
-        """
 
         # Crossing prediction ====================================================
 
@@ -334,31 +305,6 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         predicted_trajectory = torch.cat([trajectory_values,
                                           predicted_trajectory], dim=1) # [b, 75, 6]
 
-        # Add predicted trajectory/graphs to observed trajectory/graphs
-        """
-        node_idxs = [0,3,5,6]
-        edge_idxs = [10,12,13]
-        node_idxs = node_idxs + edge_idxs
-        nb_nodes = len(node_idxs)
-
-        timeseries_context = timeseries_context[:,:,node_idxs,:]
-        
-        timeseries_context = timeseries_context.reshape(
-            timeseries_context.size(0), 15, 2*nb_nodes)
-        """
-        
-        """
-        _outputs = []
-        _slices = []
-        for i in range(timeseries_context.size(1)):  
-            _slice = timeseries_context[:, i]            
-            out = self.graph_tf.context_transformer(_slice)
-            # out = self.context_transformer(_slice)         
-            enc = self.graph_enc(out)
-            _outputs.append(enc)
-            _slices.append(_slice)
-        _timeseries_context = torch.stack(_outputs, dim=1)
-        """
 
         outputs = []
         for i in range(timeseries_context.size(1)):

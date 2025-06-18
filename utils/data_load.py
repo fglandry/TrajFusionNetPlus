@@ -170,7 +170,7 @@ class DataGenerator(Sequence):
             if self.combined_model:
                 return [X]
             else:
-                return X
+                return X # [X] TENSORFLOW
 
     def _get_img_features(self, cached_path: str):
         img_features = open_pickle_file(cached_path)

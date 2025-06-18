@@ -7,17 +7,17 @@ model_opts:
                    scene_graph,
                    scene_context_with_segmentation_v4_with_ped_overlays_combined,
                    scene_video_with_segmentation_v4_with_ped_overlays_combined,
-                   box, speed]
+                   box]
   frameworks:
     pytorch: True
     hugging_faces: True
     multi-gpu: False
   process_input_features:
     enabled: True
-    indexes_to_stack: [5, 6]
+    indexes_to_stack: []
     static_features_indexes: []
 exp_opts:
-  datasets: [pie]
+  datasets: [combined]
   batch_size: [16]
   epochs: [10]
   lr: [5.0e-06]

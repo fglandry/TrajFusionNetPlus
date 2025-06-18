@@ -3,8 +3,10 @@ model_opts:
   apply_class_weights: True
   generator: True
   obs_input_type: [scene_video_with_segmentation_v0,
+                   scene_video_with_ped_overlays_combined,
                    scene_graph,
-                   scene_context_with_ped_overlays, scene_context_with_ped_overlays_previous,
+                   scene_context_with_segmentation_v4_with_ped_overlays_combined,
+                   scene_video_with_segmentation_v4_with_ped_overlays_combined,
                    box]
   frameworks:
     pytorch: True
@@ -15,7 +17,7 @@ model_opts:
     indexes_to_stack: []
     static_features_indexes: []
 exp_opts:
-  datasets: [jaad_all]
-  batch_size: [16]
-  epochs: [30]
+  datasets: [combined]
+  batch_size: [4]
+  epochs: [2]
   lr: [5.0e-06]

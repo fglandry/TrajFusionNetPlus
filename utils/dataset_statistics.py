@@ -188,8 +188,8 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
 
             dataset_statistics["dataset_means"]["trajectory"] = [-2.3904858567951655, -3.5280755481445425, 3.418520166310761, 11.067645944221596] #, 5.541632936654937]
             dataset_statistics["dataset_std_devs"]["trajectory"] = [142.47869284250606, 15.787625933538196, 143.5664739120694, 25.60335049534862] #, 8.578877125881265]
-            dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 221.32, 1864.0, 350.0] #, 54.00958464000001]
-            dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -407.0899999999999, -1655.0, -217.10000000000002] #, 0.0]
+            dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 221.32, 1864.0, 350.0] # 54.00958464000001]
+            dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -407.0899999999999, -1655.0, -217.10000000000002] # 0.0]
 
         # TODO: remove!
         #dataset_statistics["dataset_means"]["trajectory"] = [-2.3904858567951655, -3.5280755481445425, 3.418520166310761, 11.067645944221596] # 0.502492821733635, 0.6184464307559171, 0.5294962058200839, 0.7480786399767108]

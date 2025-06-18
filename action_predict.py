@@ -5,14 +5,31 @@ import time
 from typing import Any
 import yaml
 
-#import tensorflow as tf
-#import tensorflow_addons as tfa
+TENSORFLOW = False
+if TENSORFLOW:
+    import tensorflow as tf
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            print("Memory growth enabled for GPUs")
+        except RuntimeError as e:
+            print("Error setting memory growth:", e)
+
+    from tensorflow.keras import mixed_precision
+    mixed_precision.set_global_policy('mixed_float16')
+    
+    import tensorflow_addons as tfa
+
 from tensorflow.keras.layers import GRU, LSTM, RNN
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from tensorflow.keras.applications import vgg16, resnet50
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras import regularizers
+
+
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve
@@ -67,7 +84,7 @@ class ActionPredict(object):
                 self.multi_gpu_strategy = tf.distribute.MirroredStrategy()
             else:
                 self.multi_gpu_strategy = tf.distribute.get_strategy()
-    
+
     def get_concatenated_image(self, 
                                 imgs_to_concatenate, 
                                 img_seq, 
@@ -1409,9 +1426,9 @@ class ActionPredict(object):
         if not self.is_tensorflow:
             raise Exception("The appropriate training framework is not specified in configs")
 
-        with self.multi_gpu_strategy.scope():
-            train_model, class_w, optimizer, f1_metric = \
-                self._get_model_and_optimizer(data_train, model_opts, lr, optimizer)
+        #with self.multi_gpu_strategy.scope():
+        train_model, class_w, optimizer, f1_metric = \
+            self._get_model_and_optimizer(data_train, model_opts, lr, optimizer)
        
         # Train the model
         train_model.compile(
@@ -1507,8 +1524,8 @@ class ActionPredict(object):
         test_model.summary()
 
         test_data = self.get_data('test', data_test, {**opts['model_opts'], 'batch_size': 1})
-
-        test_results = test_model.predict(test_data['data'][0],
+        
+        test_results = test_model.predict(test_data['data'][0], # test_data['data'][0] TENSORFLOW
                                           batch_size=1, verbose=1)
         
         acc = accuracy_score(test_data['data'][1], np.round(test_results))

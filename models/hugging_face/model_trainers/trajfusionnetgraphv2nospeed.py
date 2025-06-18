@@ -10,8 +10,10 @@ from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTr
 
 from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransformer
 from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
-from models.hugging_face.model_trainers.trajectorytransformerbgraphnospeed import load_pretrained_encoder_transformer
+#from models.hugging_face.model_trainers.trajectorytransformerbgraph import load_pretrained_trajectorytransformerbgraph
+from models.hugging_face.model_trainers.trajectorytransformerbgraphnospeed import load_pretrained_trajectorytransformerbgraph
 from models.hugging_face.model_trainers.van import load_pretrained_van
+from models.hugging_face.model_trainers.vansequentialv2 import load_pretrained_van_sequential_v2
 from models.hugging_face.model_trainers.visiontransformer import load_pretrained_vit
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TorchTimeseriesDataset, TimeSeriesLibraryConfig
@@ -95,7 +97,7 @@ class TrajFusionNetGraphV2NoSpeed(HuggingFaceTimeSeriesModel):
         train_dataset, val_dataset, val_transforms_dicts = get_timeseries_datasets(
             data_train, data_val, model, generator, None,
             get_image_transform=True, img_model_config=None,
-            # get_seg_maps_transforms=True,
+            get_seg_maps_transforms=True,
             dataset_statistics=dataset_statistics)
 
         warmup_ratio = 0.1
@@ -240,7 +242,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         self.class_w = torch.tensor(class_w).to(self._device) if class_w else None
         self.num_labels = config_for_huggingface.num_labels
 
-        self.combine_branches_with_attention = True
+        self.combine_branches_with_attention = False
         self.combine_vans_with_attention = False
 
         # MODEL PARAMETERS ==========================================
@@ -249,26 +251,32 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         self.van_output_size = 256
         self.max_classifier_hidden_size = NET_OUTER_DIM
         self.max_classifier_hidden_size_van = 1024 # 2*NET_INNER_DIM
-        self.fc1_neurons = 2 * 2 * self.max_classifier_hidden_size
+        self.fc1_neurons = 2 * self.max_classifier_hidden_size
         self.fc2_neurons = NET_OUTER_DIM
         
         # Get pretrained VAN Models -------------------------------------------
-        self.van1 = load_pretrained_van( # predicted ped overlays
-            dataset_name,
-            is_predicted_overlays=True,
-            add_classification_head=False,
-            submodels_paths=submodels_paths)
+        #self.van1 = load_pretrained_van( # predicted ped overlays
+        #    dataset_name,
+        #    is_predicted_overlays=True,
+        #    add_classification_head=False,
+        #    submodels_paths=submodels_paths)
 
-        self.van2 = load_pretrained_van( # load_pretrained_vit( # observed ped overlays
+        #self.van2 = load_pretrained_van( # load_pretrained_vit( # observed ped overlays
+        #    dataset_name,
+        #    is_predicted_overlays=False,
+        #    add_classification_head=False,
+        #    submodels_paths=submodels_paths)
+
+        self.van_sequential_v2 = load_pretrained_van_sequential_v2(
             dataset_name,
-            is_predicted_overlays=False,
             add_classification_head=False,
             submodels_paths=submodels_paths)
 
         # Get pretrained encoder transformer -----------------------------------------
-        self.traj_class_TF = load_pretrained_encoder_transformer(dataset_name,
-                                                                 add_classification_head=False,
-                                                                 submodels_paths=submodels_paths)
+        self.traj_class_TF = load_pretrained_trajectorytransformerbgraph(
+            dataset_name,
+            add_classification_head=False,
+            submodels_paths=submodels_paths)
         
 
         #self.context_transformer = load_pretrained_graph_transformer(
@@ -282,7 +290,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
             self.self_attention = SelfAttention(self.max_classifier_hidden_size)
         if self.combine_vans_with_attention:
             self.self_attention_van = SelfAttention(self.max_classifier_hidden_size_van)
-        self.van_output_embed = nn.Linear(self.max_classifier_hidden_size_van, NET_OUTER_DIM)
+        self.van_output_embed = nn.Linear(40, NET_OUTER_DIM)
         self.ctx_tf_output_embed = nn.Linear(40, NET_OUTER_DIM)
         self.dropout = nn.Dropout(p=DROPOUT)
         self.fc1 = nn.Linear(self.fc1_neurons, self.fc2_neurons)
@@ -294,9 +302,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         self,
         trajectory_values: torch.Tensor = None,
         timeseries_context: Optional[torch.Tensor] = None,
-        previous_timeseries_context: Optional[torch.Tensor] = None,
-        image_context: torch.Tensor = None,
-        previous_image_context: torch.Tensor = None,
+        video_context: Optional[torch.Tensor] = None,
         normalized_trajectory_values: torch.Tensor = None,
         labels: Optional[torch.Tensor] = None,
         output_hidden_states: Optional[bool] = None,
@@ -314,36 +320,12 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         
         return_dict = self._on_entry(output_hidden_states, return_dict)
 
-        # Apply VAN model to image context with observed pedestrian overlays =========================
-        output1 = self.van1(
-            image_context,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict
+        van_seq_output = self.van_sequential_v2(
+            video_context=video_context
         )
-        van_output = output1.pooler_output if return_dict else output1 # shape=[batch, 512]
-
-        output2 = self.van2(
-            previous_image_context,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict
-        )
-        van_output_prev = output2.pooler_output if return_dict else output2
-
-        van_output_cat = torch.cat([van_output_prev, 
-                                    van_output], dim=1)
-        van_output_cat = self.van_output_embed(van_output_cat) # shape=[batch, 40]
-            
         
-        # van_output_cat = self.van_output_embed(van_output) # shape=[batch, 40]
+        van_seq_output = self.van_output_embed(van_seq_output) # shape=[batch, 40]
 
-
-        """   
-        # Apply "Graph" Transformer to scene graph data
-        ctx_tf_output = self.context_transformer(
-            timeseries_context=timeseries_context
-        ) # [B, 40]
-        ctx_tf_output = self.ctx_tf_output_embed(ctx_tf_output)
-        """
         
         
         # Apply Encoder TF to trajectory values =============================================
@@ -357,13 +339,13 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         # Fuse branches =====================================================================
 
         if self.combine_branches_with_attention:
-            tuple_to_concat = [outputs_pred, van_output_cat] #, ctx_tf_output]
+            tuple_to_concat = [outputs_pred, van_seq_output] #, ctx_tf_output]
             original_x = torch.cat(tuple_to_concat, dim=1) # shape=[batch, combined_fc_len]
             
             x = self._concatenate_with_attention(self.self_attention, 
                     original_x, tuple_to_concat, self.max_classifier_hidden_size)
         else:
-            tuple_to_concat = [outputs_pred, van_output_cat, ctx_tf_output]
+            tuple_to_concat = [outputs_pred, van_seq_output]
             x = torch.cat(tuple_to_concat, dim=1) # shape=[batch, 80]
 
         # Apply fully-connected layers

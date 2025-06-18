@@ -17,7 +17,7 @@ model_opts:
     indexes_to_stack: [5, 6]
     static_features_indexes: []
 exp_opts:
-  datasets: [jaad_all]
+  datasets: [combined]
   batch_size: [8]
   epochs: [60]
   lr: [5.0e-06]

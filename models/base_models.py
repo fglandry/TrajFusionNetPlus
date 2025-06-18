@@ -100,8 +100,7 @@ def convert_to_fcn(model, classes=2, activation='softmax',
 
 
 def C3DNet(freeze_conv_layers=False, weights=None,
-           dense_activation='softmax', dropout=0.5, include_top=False,
-           input_layer=None, *args, **kwargs):
+           dense_activation='softmax', dropout=0.5, include_top=False):
     """
     C3D model implementation. Source: https://github.com/adamcasson/c3d
     Reference: Du Tran, Lubomir Bourdev, Rob Fergus, Lorenzo Torresani,and Manohar Paluri. 
@@ -115,19 +114,8 @@ def C3DNet(freeze_conv_layers=False, weights=None,
     Returns:
         C3D model
     """
-    #if not input_layer:
-    input_layer = Input(shape=(16, 112, 112, 3))
-    all_inputs = input_layer
-    """
     input_data = Input(shape=(16, 112, 112, 3))
-    input_2 = Input(shape=(16, sequence_features_len))
-    #input_2 = Input(shape=(16, 4))
-    #input_3 = Input(shape=(16, 1))
-    #input_4 = Input(shape=(16, 72))
-    all_inputs = [input_data, input_2]
-    #input_data = tf.gather(input_data, 0)
-    """
-    model = Conv3D(64, 3, activation='relu', padding='same', name='conv1')(input_layer)
+    model = Conv3D(64, 3, activation='relu', padding='same', name='conv1')(input_data)
     model = MaxPooling3D(pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid', name='pool1')(model)
     # 2nd layer group
     model = Conv3D(128, 3, activation='relu', padding='same', name='conv2')(model)
@@ -154,23 +142,22 @@ def C3DNet(freeze_conv_layers=False, weights=None,
     model_fc7 = Dropout(dropout)(model)
     model_fc8 = Dense(487, activation=dense_activation, name='fc8')(model_fc7)
 
-    net_model = Model(all_inputs, model_fc8)
+    net_model = Model(input_data, model_fc8)
     if weights is not None:
         net_model.load_weights(weights)
 
     if include_top:
         model_fc8_new = Dense(1, activation=dense_activation, name='fc8')(model_fc7)
-        net_model = Model(all_inputs, model_fc8_new)
+        net_model = Model(input_data, model_fc8_new)
         if freeze_conv_layers:
             for layer in model.layers[:-5]:
                 layer.trainable = False
             for layer in model.layers:
                 print(layer.name, layer.trainable)
     else:
-        #net_model = Model(all_inputs, model_flatten)
-        net_model = model_fc8
+        net_model = Model(input_data, model_flatten)
 
-    return net_model, input_layer
+    return net_model
     
 
 def I3DNet(freeze_conv_layers=False, weights=None, classes=1,
