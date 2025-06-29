@@ -5,7 +5,7 @@ import time
 from typing import Any
 import yaml
 
-TENSORFLOW = False
+TENSORFLOW = True
 if TENSORFLOW:
     import tensorflow as tf
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -1075,6 +1075,18 @@ class ActionPredict(object):
                                     get_previous_scene_graph=True)
             elif "scene_video" in d_type:
                 features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type)
+            elif 'pose' in d_type:
+                path_to_pose, _ = get_path(save_folder='poses',
+                                           dataset=model_opts['dataset'],
+                                           save_root_folder='data/features')
+                features, _ = get_pose(model_opts,
+                                    data['image'],
+                                    data['box_org'],
+                                    data['ped_id'],
+                                    data_type=data_type,
+                                    file_path=path_to_pose,
+                                    dataset=model_opts['dataset'])
+                feat_shape = features.shape[1:]
             else:
                 features = data[d_type]
                 feat_shape = features.shape[1:]
@@ -1429,7 +1441,6 @@ class ActionPredict(object):
         #with self.multi_gpu_strategy.scope():
         train_model, class_w, optimizer, f1_metric = \
             self._get_model_and_optimizer(data_train, model_opts, lr, optimizer)
-       
         # Train the model
         train_model.compile(
             loss='binary_crossentropy',
@@ -1437,7 +1448,7 @@ class ActionPredict(object):
             metrics=['accuracy', f1_metric])
 
         callbacks = self.get_callbacks(learning_scheduler, model_path)
-        
+
         history = train_model.fit(x=data_train['data'][0],
                                   y=None if self._generator else data_train['data'][1],
                                   batch_size=batch_size,
@@ -1525,7 +1536,7 @@ class ActionPredict(object):
 
         test_data = self.get_data('test', data_test, {**opts['model_opts'], 'batch_size': 1})
         
-        test_results = test_model.predict(test_data['data'][0], # test_data['data'][0] TENSORFLOW
+        test_results = test_model.predict(test_data['data'][0], # TENSORFLOW
                                           batch_size=1, verbose=1)
         
         acc = accuracy_score(test_data['data'][1], np.round(test_results))

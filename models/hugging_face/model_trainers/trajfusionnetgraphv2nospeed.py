@@ -420,18 +420,23 @@ def load_pretrained_trajfusionnet(dataset_name: str):
     if dataset_name == "combined":
         checkpoint = "data/models/combined/TrajFusionNetGraphV1NoSpeed/11Apr2025-09h01m48s"
         checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/16May2025-08h49m07s_C13"
+        checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/18Jun2025-08h36m00s_C16"
     elif dataset_name == "pie":
         checkpoint = "data/models/pie/TrajFusionNet/weights_trajfusionnet_pie"
-        checkpoint = "data/models/combined/TrajFusionNetGraphV1NoSpeed/11Apr2025-09h01m48s"
-        checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/16May2025-08h49m07s_C13"
+        #checkpoint = "data/models/combined/TrajFusionNetGraphV1NoSpeed/11Apr2025-09h01m48s"
+        #checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/16May2025-08h49m07s_C13"
+        #checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/18Jun2025-08h36m00s_C16"
+        raise Exception()
     elif dataset_name == "jaad_all":
         checkpoint = "data/models/jaad_all/TrajFusionNet/weights_trajfusionnet_jaadall"
         # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/17Feb2025-15h18m22s/checkpoint-16170"
         # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-16170"
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-12397"
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/30Mar2025-11h40m50s_TFG4/checkpoint-14553"
-        checkpoint = "data/models/combined/TrajFusionNetGraphV1NoSpeed/11Apr2025-09h01m48s"
-        checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/16May2025-08h49m07s_C13"
+        #checkpoint = "data/models/combined/TrajFusionNetGraphV1NoSpeed/11Apr2025-09h01m48s"
+        #checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/16May2025-08h49m07s_C13"
+        #checkpoint = "data/models/combined/TrajFusionNetGraphV2NoSpeed/18Jun2025-08h36m00s_C16"
+        raise Exception()
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         
