@@ -119,8 +119,11 @@ class HuggingFaceTimeSeriesModel():
         is_tte_label = "tte_label" in examples[0]
         is_tte_pos_label = "tte_pos_label" in examples[0]
 
-        trajectory_values = torch.stack([example["pixel_values"] for example in examples])
-
+        if "pixel_values" in examples[0]:
+            trajectory_values = torch.stack([example["pixel_values"] for example in examples])
+        else:
+            trajectory_values = None
+            
         if examples[0]["label"].shape[-1] > 1:
             self.forecast = True
             labels = torch.FloatTensor(np.array([example["label"] for example in examples]))
@@ -194,6 +197,7 @@ class TorchTimeseriesDataset(Dataset):
             elif data_type == 'test':
                 self.targets = targets
 
+        self.trajectory_data = True
         self.video_data = False
         self.context_image = False
         self.scene_video_with_segmentation = False
@@ -229,6 +233,14 @@ class TorchTimeseriesDataset(Dataset):
                 self.video_sequential_context = True
             if len(self.data.input_type_list) > 4 and "with_segmentation" in self.data.input_type_list[4]:
                 self.video_sequential_segmentation = True
+                #self.video_sequential_segmentation = False
+                #self.trajectory_data = False
+        elif "scene_video_with_ped_overlays_combined" in self.data.input_type_list: # TrajFusionNetGraphV2Inference.yaml
+            self.timeseries_context = "scene_graph" in self.data.input_type_list[1] or "scene_graph" in self.data.input_type_list[2]
+            self.video_data = False
+            self.video_sequential_context = True
+            self.video_sequential_segmentation = False
+            self.trajectory_data = False
         elif "scene_video" in self.data.input_type_list[0] or "local_box_video" in self.data.input_type_list[0]:
             self.video_sequential_context = True
             self.video_data = False
@@ -286,8 +298,12 @@ class TorchTimeseriesDataset(Dataset):
         """ Get timeseries item """
         item, item_norm = self._get_trajectory_features_item(index)
         item = item.type(torch.FloatTensor) # required by Time Series Library models
-        item = {"pixel_values": item} # 'pixel_values' does not really make sense here, but is expected by the huggingface model class
         
+        if self.trajectory_data:
+            item = {"pixel_values": item} # 'pixel_values' does not really make sense here, but is expected by the huggingface model class
+        else:
+            item = {}
+
         # Get normalized trajectory values
         if self.item_norm:
             item_norm = item_norm.type(torch.FloatTensor)
@@ -392,10 +408,11 @@ class TorchTimeseriesDataset(Dataset):
 
         # todo: assuming the third/fourth item in list corresponds to the timeseries context data
         obs_input_type_index = 2
-        #if self.timeseries_double_context:
-        #    obs_input_type_index = 3
-        if self.video_sequential_context:
-            obs_input_type_index = 2 # 'scene_graph'
+        if self.video_sequential_context: # 'scene_graph'
+            if self.video_sequential_segmentation:
+                obs_input_type_index = 2
+            else:
+                obs_input_type_index = 1
         elif self.scene_video_with_segmentation:
             obs_input_type_index = 1
         elif len(item) == 2: # TrajectoryTransformerbgraph
@@ -525,7 +542,8 @@ class TorchTimeseriesDataset(Dataset):
         return image_item
     
     def _get_video_sequential_context_item(self, index: int, 
-                                           segmentation: bool = False):
+                                           segmentation: bool = False,
+                                           add_reduced_sequence_to_context=False):
         item = self.data[index]
         item = item[0] if self.data_type!='test' else item[0]
 
@@ -542,7 +560,12 @@ class TorchTimeseriesDataset(Dataset):
         item = np.squeeze(item)
 
         tensor_list = []
-        for t in range(item.shape[0]): # for each element in sequence
+        if add_reduced_sequence_to_context:
+            indices = [-15, -10, -5, -1]
+        else:
+            indices = range(item.shape[0])  # all indices in sequence
+        
+        for t in indices: # for each element in sequence
             t_item = item[t, :]
             x = convert_img_to_format_used_by_transform(t_item, debug=False)
         

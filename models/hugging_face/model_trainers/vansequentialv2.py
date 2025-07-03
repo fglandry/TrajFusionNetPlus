@@ -323,6 +323,7 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         timeseries_context: Optional[torch.Tensor] = None,
         previous_timeseries_context: Optional[torch.Tensor] = None,
         video_context: Optional[torch.Tensor] = None,
+        video_context_contains_full_sequence = True,
         video_segmentation: Optional[torch.Tensor] = None,
         # normalized_trajectory_values: torch.Tensor = None,
         labels: torch.Tensor = None,
@@ -342,60 +343,20 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         assert output_hidden_states is None
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        #graph_tf_output_0 = self.graph_tf.context_transformer(
-        #    timeseries_context[:,0,:,:]
-        #)
-        van_output_0 = self.van_min15(video_context[:,-15,:,:,:]).pooler_output
-        #output_0 = torch.cat((van_output_0, graph_tf_output_0), dim=1)
-
-        #ctx_tf_output_1 = self.van(timeseries_context[:,1,:,:]).pooler_output
-        #ctx_tf_output_2 = self.van(timeseries_context[:,2,:,:]).pooler_output
-        #ctx_tf_output_3 = self.van(timeseries_context[:,3,:,:]).pooler_output
-        #ctx_tf_output_4 = self.van(timeseries_context[:,4,:,:]).pooler_output
-
-        #graph_tf_output_5 = self.graph_tf.context_transformer(
-        #    timeseries_context[:,5,:,:]
-        #)
-        #van_output_5 = self.van_min10(video_segmentation[:,-10,:,:,:]).pooler_output
-        van_output_5 = self.van_min10(video_context[:,-10,:,:,:]).pooler_output
-        #output_5 = torch.cat((van_output_5, graph_tf_output_5), dim=1)
-
-        #ctx_tf_output_6 = self.van(timeseries_context[:,6,:,:]).pooler_output
-        #ctx_tf_output_7 = self.van(timeseries_context[:,7,:,:]).pooler_output
-        #ctx_tf_output_8 = self.van(timeseries_context[:,8,:,:]).pooler_output
-        #ctx_tf_output_9 = self.van(timeseries_context[:,9,:,:]).pooler_output
-
-        #graph_tf_output_10 = self.graph_tf.context_transformer(
-        #    timeseries_context[:,10,:,:]
-        #)
-        #van_output_10 = self.van_min5(video_segmentation[:,-5,:,:,:]).pooler_output
-        van_output_10 = self.van_min5(video_context[:,-5,:,:,:]).pooler_output
-        #output_10 = torch.cat((van_output_10, graph_tf_output_10), dim=1)
-
-        #ctx_tf_output_11 = self.van(timeseries_context[:,11,:,:]).pooler_output
-        #ctx_tf_output_12 = self.van(timeseries_context[:,12,:,:]).pooler_output
-        #ctx_tf_output_13 = self.van(timeseries_context[:,13,:,:]).pooler_output
-        
-        #graph_tf_output_14 = self.graph_tf.context_transformer(
-        #    timeseries_context[:,14,:,:]
-        #)
-        van_output_14 = self.van_0(video_context[:,-1,:,:,:]).pooler_output
-        #output_14 = torch.cat((van_output_14, graph_tf_output_14), dim=1)
+        if video_context_contains_full_sequence:
+            van_output_0 = self.van_min15(video_context[:,-15,:,:,:]).pooler_output
+            van_output_5 = self.van_min10(video_context[:,-10,:,:,:]).pooler_output
+            van_output_10 = self.van_min5(video_context[:,-5,:,:,:]).pooler_output
+            van_output_14 = self.van_0(video_context[:,-1,:,:,:]).pooler_output
+        else:
+            van_output_0 = self.van_min15(video_context[:,-4,:,:,:]).pooler_output
+            van_output_5 = self.van_min10(video_context[:,-3,:,:,:]).pooler_output
+            van_output_10 = self.van_min5(video_context[:,-2,:,:,:]).pooler_output
+            van_output_14 = self.van_0(video_context[:,-1,:,:,:]).pooler_output
 
         ctx_tf_output = torch.stack((van_output_0,
-                                     #ctx_tf_output_1,
-                                     #ctx_tf_output_2,
-                                     #ctx_tf_output_3,
-                                     #ctx_tf_output_4,
                                      van_output_5,
-                                     #ctx_tf_output_6,
-                                     #ctx_tf_output_7,
-                                     #ctx_tf_output_8,
-                                     #ctx_tf_output_9,
                                      van_output_10,
-                                     #ctx_tf_output_11,
-                                     #ctx_tf_output_12,
-                                     #ctx_tf_output_13,
                                      van_output_14), dim=1)
 
         outputs = self.tsl_transformer(

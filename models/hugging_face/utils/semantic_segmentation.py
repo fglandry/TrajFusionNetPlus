@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 import random
 import requests
+import statistics
 import time
 import torch
 from torch import nn
@@ -26,7 +27,7 @@ class Singleton(type):
 
 class SegformerForSemanticSegmentationWrapper(metaclass=Singleton):
     
-    def __init__(self):
+    def __init__(self, compute_time=False):
         # "nvidia/segformer-b0-finetuned-ade-512-512" -> for initial testing
         # "matei-dorian/segformer-b5-finetuned-human-parsing" -> results are not that great, especially for smaller pedestrians
         # "mattmdjaga/segformer_b2_clothes" -> potentially even worse than the previous one
@@ -34,18 +35,33 @@ class SegformerForSemanticSegmentationWrapper(metaclass=Singleton):
         self.processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b3-finetuned-cityscapes-1024-1024")
         self.model = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b3-finetuned-cityscapes-1024-1024")
         self.extractor = SegformerFeatureExtractor()
+        self.compute_time = compute_time
+        if self.compute_time:
+            self.time_estimates = []
 
     def run(self, img_features: np.ndarray, debug=False):
         #url = "http://images.cocodataset.org/val2017/000000039769.jpg"
         #image = Image.open(requests.get(url, stream=True).raw)
         #show_image(img_features)
+
         img_features = cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB) # is the model input really RGB?
         image = Image.fromarray(img_features)
         #image.show()
 
         inputs = self.processor(images=image, return_tensors="pt")
 
+        if self.compute_time:
+            start_time = time.time()
+
         outputs = self.model(**inputs)
+
+        if self.compute_time:
+            total_time = time.time() - start_time
+            print(f"Time to compute 1 image: {total_time}")
+            self.time_estimates.append(total_time)
+
+            if len(self.time_estimates) > 100:
+                self.get_calc_time()
 
         logits = outputs.logits  # shape (batch_size, num_labels, height/4, width/4)
 
@@ -59,6 +75,11 @@ class SegformerForSemanticSegmentationWrapper(metaclass=Singleton):
         #class_idx_np = np.expand_dims(class_idx_tsr.numpy(), axis=2)
         #cv2.imshow("image", class_idx_np)
         return class_idx_img_np, class_idx_tsr, image
+
+    def get_calc_time(self):
+        avg_time = statistics.mean(self.time_estimates)
+        print(f"Average time per segmentation computation: {avg_time}")
+        return avg_time
 
     def get_segmentation_map(self, logits: torch.Tensor, image: Image.Image) -> torch.Tensor:
         #self.processor.post_process_semantic_segmentation()

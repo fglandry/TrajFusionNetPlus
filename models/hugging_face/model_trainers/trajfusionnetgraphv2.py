@@ -96,7 +96,7 @@ class TrajFusionNetGraphV2(HuggingFaceTimeSeriesModel):
         train_dataset, val_dataset, val_transforms_dicts = get_timeseries_datasets(
             data_train, data_val, model, generator, None,
             get_image_transform=True, img_model_config=None,
-            get_seg_maps_transforms=True,
+            get_seg_maps_transforms = False if kwargs["model_opts"].get("skip_seg_maps_transforms") else True,
             dataset_statistics=dataset_statistics)
 
         warmup_ratio = 0.1
@@ -294,7 +294,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
             self.self_attention_van = SelfAttention(self.max_classifier_hidden_size_van)
         #self.van_output_embed = nn.Linear(self.max_classifier_hidden_size_van, NET_OUTER_DIM)
         self.van_output_embed = nn.Linear(40, NET_OUTER_DIM)
-        self.ctx_tf_output_embed = nn.Linear(40, NET_OUTER_DIM)
+
         self.dropout = nn.Dropout(p=DROPOUT)
         self.fc1 = nn.Linear(self.fc1_neurons, self.fc2_neurons)
         self.fc2 = nn.Linear(self.fc2_neurons, self.num_labels)
@@ -326,38 +326,9 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         van_seq_output = self.van_sequential_v2(
             video_context=video_context
         )
-
-        """
-        # Apply VAN model to image context with observed pedestrian overlays =========================
-        output1 = self.van1(
-            image_context,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict
-        )
-        van_output = output1.pooler_output if return_dict else output1 # shape=[batch, 512]
-
-        output2 = self.van2(
-            previous_image_context,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict
-        )
-        van_output_prev = output2.pooler_output if return_dict else output2
-
-        van_output_cat = torch.cat([van_output_prev, 
-                                    van_output], dim=1)
-        van_output_cat = self.van_output_embed(van_output_cat) # shape=[batch, 40]
-        """
         
         van_seq_output = self.van_output_embed(van_seq_output) # shape=[batch, 40]
 
-        """  
-        # Apply "Graph" Transformer to scene graph data
-        ctx_tf_output = self.context_transformer(
-            timeseries_context=timeseries_context
-        ) # [B, 40]
-        ctx_tf_output = self.ctx_tf_output_embed(ctx_tf_output)
-        """
-        
         
         # Apply Encoder TF to trajectory values =============================================
 
@@ -448,14 +419,18 @@ def train_submodels(dataset: str,
     return submodels_paths
 
 def load_pretrained_trajfusionnet(dataset_name: str):
-    if dataset_name in ["pie", "combined"]:
+    if dataset_name == "combined":
         checkpoint = "data/models/pie/TrajFusionNet/weights_trajfusionnet_pie"
+        raise Exception()
+    if dataset_name == "pie":
+        checkpoint = "data/models/pie/TrajFusionNetGraphV2/01Jun2025-13h53m18s_TNG3"
     elif dataset_name == "jaad_all":
         checkpoint = "data/models/jaad_all/TrajFusionNet/weights_trajfusionnet_jaadall"
         # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/17Feb2025-15h18m22s/checkpoint-16170"
         # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-16170"
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-12397"
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/30Mar2025-11h40m50s_TFG4/checkpoint-14553"
+        checkpoint = "data/models/jaad_all/TrajFusionNetGraphV2/02Jun2025-17h58m27s_TNG2"
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         
@@ -471,94 +446,6 @@ def load_pretrained_trajfusionnet(dataset_name: str):
             param.requires_grad = False
     return pretrained_model
 
-
-class VanillaTransformerCrossAttnModel2(TimeSeriesTransformerPreTrainedModel):
-    
-    base_model_prefix = "transformer" # needs to be a class property
-    
-    def __init__(self,
-                 config_for_huggingface,
-                 config_for_timeseries_lib
-        ):
-        super().__init__(config_for_huggingface)
-        self.tsl_transformer_0 = TokengtTransformer(config_for_timeseries_lib[1]) 
-        self.cross_attn_dim = 1
-
-        self.cross_attention_1 = CrossAttention(self.cross_attn_dim) # CrossAttention(20)
-        self.cross_attention_2 = CrossAttention(self.cross_attn_dim)
-        self.cross_attention_3 = CrossAttention(self.cross_attn_dim)
-        self.cross_attention_4 = CrossAttention(self.cross_attn_dim)
-
-        self.road_emb_fc = nn.Linear(9, 5) # (9, self.cross_attn_dim)
-        self.sidewalk_emb_fc = nn.Linear(4, 5)
-        self.pedestrians_emb_fc = nn.Linear(8, 5)
-        self.vehicles_emb_fc = nn.Linear(8, 5)
-        
-        self.use_cross_attention = False
-        self.cross_attention_with_context_as_last_dim = False
-        self.cross_attention_with_context_as_second_dim = True
-        self.residual_at_the_end = False
-
-        # Initialize weights and apply final processing
-        self.post_init()
-    
-    def forward(
-        self,
-        trajectory_values,
-        *args,
-        **kwargs
-    ):
-        if self.use_cross_attention:
-            # Compute inter-modal cross-attention
-            road_values = nn.ReLU()(self.road_emb_fc(
-                torch.squeeze(trajectory_values[:,0:9,:], -1)))
-            sidewalk_values = nn.ReLU()(self.sidewalk_emb_fc(
-                torch.squeeze(trajectory_values[:,9:13,:], -1)))
-            pedestrians_values = nn.ReLU()(self.pedestrians_emb_fc(
-                torch.squeeze(trajectory_values[:,13:21,:], -1)))
-            vehicles_values = nn.ReLU()(self.vehicles_emb_fc(
-                torch.squeeze(trajectory_values[:,21:29,:], -1)))
-            
-            if self.cross_attention_with_context_as_second_dim:
-                unsqueeze_dim = 2 # shape=(batch, dim, 1)
-            if self.cross_attention_with_context_as_last_dim:
-                unsqueeze_dim = 1 # shape=(batch, 1, dim)
-            road_values = road_values.unsqueeze(unsqueeze_dim) 
-            sidewalk_values = sidewalk_values.unsqueeze(unsqueeze_dim)
-            pedestrians_values = pedestrians_values.unsqueeze(unsqueeze_dim)
-            vehicles_values = vehicles_values.unsqueeze(unsqueeze_dim)
-            
-            cross_attn_ctx_1, attn_1 = self.cross_attention_1(road_values, pedestrians_values)
-            cross_attn_ctx_2, attn_2 = self.cross_attention_2(road_values, vehicles_values)
-            cross_attn_ctx_3, attn_3 = self.cross_attention_3(sidewalk_values, pedestrians_values)
-            cross_attn_ctx_4, attn_4 = self.cross_attention_4(pedestrians_values, vehicles_values)
-            
-            if self.cross_attention_with_context_as_last_dim:
-                cross_attn_ctx_1 = cross_attn_ctx_1.swapaxes(1,2)
-                cross_attn_ctx_2 = cross_attn_ctx_2.swapaxes(1,2)
-                cross_attn_ctx_3 = cross_attn_ctx_3.swapaxes(1,2)
-                cross_attn_ctx_4 = cross_attn_ctx_4.swapaxes(1,2)
-
-            trajectory_values = torch.cat([
-                trajectory_values, cross_attn_ctx_1, cross_attn_ctx_2,
-                cross_attn_ctx_3, cross_attn_ctx_4], dim=1)
-
-        # Get vanilla transformer model output
-        outputs = self.tsl_transformer_0(
-            x_enc=trajectory_values,
-            x_mark_enc=None,
-            x_dec=None,
-            x_mark_dec=None
-        )
-
-        if self.residual_at_the_end:
-            attn_1_emb = nn.ReLU()(self.last_attn_emb_fc(attn_1.flatten(1,2)))
-            attn_2_emb = nn.ReLU()(self.last_attn_emb_fc(attn_2.flatten(1,2)))
-            attn_3_emb = nn.ReLU()(self.last_attn_emb_fc(attn_3.flatten(1,2)))
-            attn_4_emb = nn.ReLU()(self.last_attn_emb_fc(attn_4.flatten(1,2)))
-            outputs = torch.cat([outputs, attn_1_emb, attn_2_emb, attn_3_emb, attn_4_emb, attn_5_emb, attn_6_emb], dim=1)
-
-        return outputs
     
 def get_config_for_context_timeseries(encoder_input_size, seq_len, hyperparams, 
                                       add_graph_context_to_lstm=False):
