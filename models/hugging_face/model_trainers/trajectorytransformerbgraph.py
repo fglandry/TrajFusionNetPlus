@@ -361,10 +361,13 @@ def load_pretrained_trajectorytransformerbgraph(dataset_name: str,
             checkpoint = "data/models/pie/TrajectoryTransformerbgraph/17May2025-14h57m41s_TTB3"
             checkpoint = "data/models/pie/TrajectoryTransformerbgraph/21May2025-14h20m04s_TTB4"
             checkpoint = "data/models/pie/TrajectoryTransformerbgraph/28May2025-16h10m41s_TRIAL8"
+            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/weights_trajectorytfgraph_pie"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
             checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/21May2025-15h00m56s_TTB5"
             checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/01Jun2025-18h38m19s_TTB6"
+            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/21Jul2025-22h27m15s_TTB7"
+            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/weights_trajectorytfgraph_pie"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

@@ -261,15 +261,23 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         )
         """
         if dataset_name == "jaad_all":
-            van_min15_path = "data/models/jaad_all/VAN/21Apr2025-12h07m13s_VAN9"
-            van_min10_path = "data/models/jaad_all/VAN/19May2025-13h54m53s_VAN10B" # "data/models/jaad_all/VAN/21Apr2025-17h52m06s_VAN10"
-            van_min5_path = "data/models/jaad_all/VAN/19May2025-12h26m39s_VAN11B" # "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"
-            van_0_path = "data/models/jaad_all/VAN/weights_van1_jaadall"
+            #van_min15_path = "data/models/jaad_all/VAN/21Apr2025-12h07m13s_VAN9"
+            #van_min10_path = "data/models/jaad_all/VAN/19May2025-13h54m53s_VAN10B" # "data/models/jaad_all/VAN/21Apr2025-17h52m06s_VAN10"
+            #van_min5_path = "data/models/jaad_all/VAN/19May2025-12h26m39s_VAN11B" # "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"
+            #van_0_path = "data/models/jaad_all/VAN/weights_van1_jaadall"
+            van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaad"
+            van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaad"
+            van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaad"
+            van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaad"
         elif dataset_name == "pie":
-            van_min15_path = "data/models/pie/VAN/23May2025-22h52m30s_VA14"
-            van_min10_path = "data/models/pie/VAN/23May2025-23h28m50s_VA15"
-            van_min5_path = "data/models/pie/VAN/24May2025-00h23m03s_VA16"
-            van_0_path = "data/models/pie/VAN/24May2025-10h21m43s_VA17"
+            #van_min15_path = "data/models/pie/VAN/23May2025-22h52m30s_VA14"
+            #van_min10_path = "data/models/pie/VAN/23May2025-23h28m50s_VA15"
+            #van_min5_path = "data/models/pie/VAN/24May2025-00h23m03s_VA16"
+            #van_0_path = "data/models/pie/VAN/24May2025-10h21m43s_VA17"
+            van_min15_path = "data/models/pie/VAN/weights_van_min15_pie"
+            van_min10_path = "data/models/pie/VAN/weights_van_min10_pie"
+            van_min5_path = "data/models/pie/VAN/weights_van_min5_pie"
+            van_0_path = "data/models/pie/VAN/weights_van_0_pie"
         elif dataset_name == "combined":
             van_min15_path = "data/models/combined/VAN/06Jun2025-21h23m59s_CO7a"
             van_min10_path = "data/models/combined/VAN/07Jun2025-11h10m06s_CO7b"
@@ -400,13 +408,14 @@ def load_pretrained_van_sequential_v2(dataset_name: str,
             checkpoint = "data/models/combined/VANSequentialV2/13Jun2025-20h24m35s_C15/checkpoint-10850"
         if dataset_name in "pie":
             checkpoint = "data/models/pie/VANSequentialV2/24May2025-11h06m42s_VAS4"
+            checkpoint = "data/models/pie/VANSequentialV2/weights_vansequential_pie"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1"
             checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-539"
             checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-4851"
             checkpoint = "data/models/jaad_all/VANSequentialV2/21May2025-08h54m54s/checkpoint-5390"
             checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-21h18m46s_VAS2"
-
+            checkpoint = "data/models/jaad_all/VANSequentialV2/weights_vansequential_jaad"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

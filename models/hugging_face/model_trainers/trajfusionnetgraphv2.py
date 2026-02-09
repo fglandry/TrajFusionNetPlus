@@ -424,6 +424,7 @@ def load_pretrained_trajfusionnet(dataset_name: str):
         raise Exception()
     if dataset_name == "pie":
         checkpoint = "data/models/pie/TrajFusionNetGraphV2/01Jun2025-13h53m18s_TNG3"
+        checkpoint = "data/models/pie/TrajFusionNetGraphV2/weights_trajfusionnetplus_pie"
     elif dataset_name == "jaad_all":
         checkpoint = "data/models/jaad_all/TrajFusionNet/weights_trajfusionnet_jaadall"
         # checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/17Feb2025-15h18m22s/checkpoint-16170"
@@ -431,6 +432,7 @@ def load_pretrained_trajfusionnet(dataset_name: str):
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/18Feb2025-20h28m56s_TFG3/checkpoint-12397"
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV1/30Mar2025-11h40m50s_TFG4/checkpoint-14553"
         checkpoint = "data/models/jaad_all/TrajFusionNetGraphV2/02Jun2025-17h58m27s_TNG2"
+        checkpoint = "data/models/jaad_all/TrajFusionNetGraphV2/weights_trajfusionnetplus_jaad"
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         

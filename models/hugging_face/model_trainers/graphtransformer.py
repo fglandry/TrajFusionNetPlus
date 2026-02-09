@@ -496,11 +496,13 @@ def load_pretrained_graph_transformer(dataset_name: str,
             #checkpoint = "data/models/pie/TrajectoryTransformerb/weights_trajectorytransformerb_pie"
             #checkpoint = "data/models/pie/GraphTransformer/14Feb2025-23h32m24s_GT3"
             checkpoint = "data/models/pie/GraphTransformer/17May2025-09h45m07s_GT4"
+            checkpoint = "data/models/pie/GraphTransformer/weights_graphtransformer_pie"
         elif dataset_name == "jaad_all":
             #checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
             #checkpoint = "data/models/jaad_all/GraphTransformer/13Feb2025-15h40m43s_GT2"
             #checkpoint = "data/models/jaad_all/GraphTransformer/28Feb2025-10h32m36s/checkpoint-32340"
             checkpoint = "data/models/jaad_all/GraphTransformer/29Mar2025-18h53m18s_GT3"
+            checkpoint = "data/models/jaad_all/GraphTransformer/weights_graphtransformer_jaad"
 
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
