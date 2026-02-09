@@ -1,12 +1,14 @@
 *pyc
 __pycache__/
 
+/data
 data/*
 !data/
 !data/.keep
 
 data_cache/
 docker/
+/weights
 weights/
 videomae*/
 _other/
