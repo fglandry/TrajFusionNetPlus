@@ -1,5 +1,5 @@
 model_opts:
-  model: TrajFusionNetGraphV2
+  model: TrajFusionNetPlus
   apply_class_weights: True
   generator: True
   obs_input_type: [scene_video_with_segmentation_v0,

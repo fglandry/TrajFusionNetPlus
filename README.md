@@ -1,6 +1,6 @@
-# TrajFusionNet
+# TrajFusionNet+
 
-This repository contains the code for the paper **TrajFusionNet: Pedestrian Crossing Intention Prediction via Fusion of Sequential and Visual Trajectory Representations**
+This repository contains the code for the paper **TrajFusionNet+: Transformer-Based Prediction of Pedestrian Crossing Intention via Fusion of Trajectory Representations and Scene Graphs**
 
 TrajFusionNet is a transformer-based model that integrates future pedestrian trajectory and vehicle speed predictions as priors for predicting crossing intention.
 
@@ -45,7 +45,7 @@ unzip <download_location>/weights.zip -d data/
 
 To perform model inference, execute the following command:
 ```bash
-python3 train_test.py -c config_files/TrajFusionNet.yaml --test_only
+python3 train_test.py -c config_files/TrajFusionNetPlusInference.yaml --test_only
 ```
 
 The dataset to use and other config parameters can be modified in `config_files/TrajFusionNet.yaml`
@@ -54,7 +54,7 @@ The dataset to use and other config parameters can be modified in `config_files/
 
 To train the model, run:
 ```bash
-python3 train_test.py -c config_files/TrajFusionNet.yaml --train_end_to_end
+python3 train_test.py -c config_files/TrajFusionNetPlus.yaml --train_end_to_end
 ```
 
 ## Citation
@@ -72,10 +72,12 @@ Depending on your use of the code, please also cite the following:
 
 ## Authors
 
+<!--
 * Francois-Guillaume Landry
 * Moulay Akhloufi
 
 Please email efl7126@umoncton.ca (FG Landry) or create an issue if you experience problems with running the code or setting up the environment.
+-->
 
 ## License
 
