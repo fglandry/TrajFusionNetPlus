@@ -12,8 +12,7 @@ TrajFusionNetPlus is a transformer-based model for pedestrian crossing intention
   - Visual Attention Module (VAM)
     - Utilizes a visual representation of pedestrian trajectories by overlaying observed and predicted bounding boxes onto scene images.
   - Graph Attention Module (GAM)
-    - Extracts pedestrian-centric graphs from segmented scene images.
-    - Captures non-Euclidean spatial relationships between traffic elements.
+    - Extracts pedestrian-centric graphs from segmented scene images and captures non-Euclidean spatial relationships between traffic elements.
 
 ## Set up
 
