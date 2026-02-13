@@ -7,13 +7,10 @@ TrajFusionNetPlus is a transformer-based model for pedestrian crossing intention
 <img src="docs/architecture.png" alt="TrajFusionNet Architecture" width="500">
 
 - TrajFusionNetPlus is composed of three branches:
-
   - Sequence Attention Module (SAM)
     - Processes a sequential representation of past and predicted pedestrian trajectories.
-
   - Visual Attention Module (VAM)
     - Utilizes a visual representation of pedestrian trajectories by overlaying observed and predicted bounding boxes onto scene images.
-
   - Graph Attention Module (GAM)
     - Extracts pedestrian-centric graphs from segmented scene images.
     - Captures non-Euclidean spatial relationships between traffic elements.
