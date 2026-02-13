@@ -2,11 +2,21 @@
 
 This repository contains the code for the paper **TrajFusionNet+: Transformer-Based Prediction of Pedestrian Crossing Intention via Fusion of Trajectory Representations and Scene Graphs**
 
-TrajFusionNet is a transformer-based model that integrates future pedestrian trajectory and vehicle speed predictions as priors for predicting crossing intention.
+TrajFusionNetPlus is a transformer-based model for pedestrian crossing intention prediction. The architecture builds upon the TrajFusionNet model and combines sequential and visual representations of pedestrian trajectory with a graph-based representation of the scene context.
 
 <img src="docs/architecture.png" alt="TrajFusionNet Architecture" width="500">
 
-TrajFusionNet is composed of two branches: a Sequence Attention Module (SAM) and a Visual Attention Module (VAM). The SAM branch learns from a sequential representation of the observed and predicted pedestrian trajectory and vehicle speed. Complementarily, the VAM branch enables learning from a visual representation of the predicted pedestrian trajectory by overlaying predicted pedestrian bounding boxes onto scene images.
+- TrajFusionNetPlus is composed of three branches:
+
+  - Sequence Attention Module (SAM)
+    - Processes a sequential representation of past and predicted pedestrian trajectories.
+
+  - Visual Attention Module (VAM)
+    - Utilizes a visual representation of pedestrian trajectories by overlaying observed and predicted bounding boxes onto scene images.
+
+  - Graph Attention Module (GAM)
+    - Extracts pedestrian-centric graphs from segmented scene images.
+    - Captures non-Euclidean spatial relationships between traffic elements.
 
 ## Set up
 
