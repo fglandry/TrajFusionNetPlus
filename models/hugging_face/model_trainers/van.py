@@ -257,39 +257,14 @@ def load_pretrained_van(dataset_name: str,
         label2id, id2label = get_class_labels_info()
 
         if dataset_name == "combined":
-            checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
-            checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
+            checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7"
+            checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7"
         elif dataset_name == "pie":
             checkpoint1 = "data/models/pie/VAN/weights_van1_pie"
             checkpoint2 = "data/models/pie/VAN/weights_van2_pie"
-            #checkpoint1 = "data/models/pie/VAN/15Feb2025-10h55m33s_VA12"
-            #checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
-            #checkpoint1 = "data/models/pie/VAN/30Apr2025-18h37m02s_VA13"
-            checkpoint1 = "data/models/jaad_all/VAN/30Apr2025-14h05m07s_SJA9"
-            checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
             checkpoint2 = checkpoint1
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
-            #checkpoint1 = "data/models/jaad_all/VAN/weights_van2_jaadall"
-            #checkpoint1 = "data/models/jaad_all/VAN/16Feb2025-13h47m07s"
-            #checkpoint1 = "data/models/jaad_all/VAN/16Feb2025-20h16m23s/checkpoint-8085"
-            #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-10780"
-            #checkpoint1 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s/checkpoint-5390"
-            #checkpoint2 = "data/models/jaad_all/VAN/17Feb2025-13h20m50s"
-            #checkpoint1 = "data/models/jaad_all/VAN/21Feb2025-13h01m53s/checkpoint-2156"
-            #checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
-            #checkpoint1 = "data/models/jaad_all/VAN/17Apr2025-22h21m10s_VAN4"
-            #checkpoint1 = "data/models/jaad_all/VAN/18Apr2025-20h24m55s/checkpoint-1617"
-            #checkpoint1 = "data/models/jaad_all/VAN/19Apr2025-21h27m34s/checkpoint-8085"
-            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-10h48m44s/checkpoint-1200"
-            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-11h21m10s/checkpoint-2600"
-            #checkpoint1 = "data/models/jaad_all/VAN/20Apr2025-23h37m47s_VAN8/checkpoint-1100"
-            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-12h07m13s_VAN9/checkpoint-2600"
-            #checkpoint1 = "data/models/jaad_all/VAN/21Apr2025-17h52m06s/checkpoint-8085"
-            #checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7" # combined
-            #checkpoint1 = "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"
-            #checkpoint1 = "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11/checkpoint-5390"
-
             checkpoint2 = checkpoint1
 
         elif dataset_name == "jaad_beh":
@@ -307,24 +282,6 @@ def load_pretrained_van(dataset_name: str,
             label2id=label2id,
             ignore_mismatched_sizes=True)
     else:
-        # TODO: remove the following
-        """
-        class_labels = ["no_cross", "cross"]
-        label2id = {label: i for i, label in enumerate(class_labels)}
-        id2label = {i: label for label, i in label2id.items()}
-        model_ckpt = "Visual-Attention-Network/van-base"
-        config = VanEncodingsForImageClassification.from_pretrained(
-            model_ckpt,
-            id2label=id2label,
-            label2id=label2id,
-            ignore_mismatched_sizes=True).config # TODO: there must be a better way to do this without loading the model
-        config.num_channels = 15 # TODO: change back to 3
-        config.problem_type = "single_label_classification"
-        pretrained_model = VanModel.from_pretrained(
-            checkpoint,
-            config=config,
-            ignore_mismatched_sizes=True)
-        """
         if num_channels:
             config = get_van_config(num_channels)
             pretrained_model = VanModel.from_pretrained(

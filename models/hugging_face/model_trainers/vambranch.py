@@ -10,7 +10,7 @@ from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTr
 #from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransformer
 from libs.time_series_library.models_tsl.TransformerV2 import Model as VanillaTransformerTSLModel
 #from models.custom_layers_pytorch import CrossAttention
-#from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
+#from models.hugging_face.model_trainers.graphtransformer import load_pretrained_gam_branch
 #from models.hugging_face.model_trainers.trajectorytransformer import load_pretrained_trajectory_transformer
 #from models.hugging_face.model_trainers.trajectorytransformerb import load_pretrained_encoder_transformer
 from models.hugging_face.model_trainers.van import load_pretrained_van
@@ -25,7 +25,7 @@ NET_INNER_DIM = 512
 DROPOUT = 0.1
 
 
-class VANSequentialV2(HuggingFaceTimeSeriesModel):
+class VAMBranch(HuggingFaceTimeSeriesModel):
 
     def train(self,
               data_train: dict,  
@@ -156,7 +156,7 @@ class VANSequentialV2(HuggingFaceTimeSeriesModel):
         print("Starting inference using trained model Trajectory Transformer Classifier ===========================")
 
         if test_only:
-            pretrained_model = load_pretrained_van_sequential_v2(dataset_name)
+            pretrained_model = load_pretrained_vam_branch(dataset_name)
             training_result["trainer"].model = pretrained_model
 
         return test_time_series_based_model(
@@ -197,8 +197,6 @@ class VANEncoderTransformerForClassification(TimeSeriesTransformerPreTrainedMode
         self,
         trajectory_values: torch.Tensor = None,
         timeseries_context: Optional[torch.Tensor] = None,
-        previous_timeseries_context: Optional[torch.Tensor] = None,
-        # normalized_trajectory_values: torch.Tensor = None,
         video_context: Optional[torch.Tensor] = None,
         video_segmentation: Optional[torch.Tensor] = None,
         labels: torch.Tensor = None,
@@ -242,8 +240,6 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
                  config_for_huggingface: TimeSeriesTransformerConfig,
                  config_for_timeseries_lib: dict = None,
                  dataset_name: str = None,
-                 model_opts: dict = None,
-                 config_for_context_timeseries = None
         ):
         super().__init__(config_for_huggingface, config_for_timeseries_lib)
         self._device = get_device()
@@ -252,28 +248,12 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
 
         
         # Get pretrained VAN Models -------------------------------------------
-        """
-        self.van = load_pretrained_van(
-            dataset_name,
-            is_predicted_overlays=False,
-            add_classification_head=False,
-            #submodels_paths=submodels_paths
-        )
-        """
         if dataset_name == "jaad_all":
-            #van_min15_path = "data/models/jaad_all/VAN/21Apr2025-12h07m13s_VAN9"
-            #van_min10_path = "data/models/jaad_all/VAN/19May2025-13h54m53s_VAN10B" # "data/models/jaad_all/VAN/21Apr2025-17h52m06s_VAN10"
-            #van_min5_path = "data/models/jaad_all/VAN/19May2025-12h26m39s_VAN11B" # "data/models/jaad_all/VAN/23Apr2025-16h56m56s_VAN11"
-            #van_0_path = "data/models/jaad_all/VAN/weights_van1_jaadall"
             van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaad"
             van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaad"
             van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaad"
             van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaad"
         elif dataset_name == "pie":
-            #van_min15_path = "data/models/pie/VAN/23May2025-22h52m30s_VA14"
-            #van_min10_path = "data/models/pie/VAN/23May2025-23h28m50s_VA15"
-            #van_min5_path = "data/models/pie/VAN/24May2025-00h23m03s_VA16"
-            #van_0_path = "data/models/pie/VAN/24May2025-10h21m43s_VA17"
             van_min15_path = "data/models/pie/VAN/weights_van_min15_pie"
             van_min10_path = "data/models/pie/VAN/weights_van_min10_pie"
             van_min5_path = "data/models/pie/VAN/weights_van_min5_pie"
@@ -301,40 +281,20 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
             submodels_paths={"van_path": van_0_path}
         )
 
-        #self.van_channels = load_pretrained_van_sequential(dataset_name,
-        #    add_classification_head=False)
-        #self.van_channels_emb = nn.Linear(512, 40)
-
-
-        # Get pretrained GraphTransformer model -------------------------------------------
-        #self.graph_tf = load_pretrained_graph_transformer(
-        #    dataset_name,
-        #    add_classification_head=False,
-        #    #submodels_paths=submodels_paths
-        #)
-
-        classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
+        classifier_hidden_size = 40 # number of neurons in last linear layer at the end of model
         self.classifier = nn.Linear(
             classifier_hidden_size, config_for_huggingface.num_labels) \
             if config_for_huggingface.num_labels > 0 else nn.Identity()
-        #self.classifier = nn.Linear(4096, classifier_hidden_size)
 
         self.tsl_transformer = VanillaTransformerTSLModel(config_for_timeseries_lib)
-        
 
         # Initialize weights and apply final processing
         self.post_init()
 
     def forward(
         self,
-        trajectory_values: torch.Tensor = None,
-        timeseries_context: Optional[torch.Tensor] = None,
-        previous_timeseries_context: Optional[torch.Tensor] = None,
         video_context: Optional[torch.Tensor] = None,
         video_context_contains_full_sequence = True,
-        video_segmentation: Optional[torch.Tensor] = None,
-        # normalized_trajectory_values: torch.Tensor = None,
-        labels: torch.Tensor = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
         *args, **kwargs
@@ -374,47 +334,24 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
             x_mark_dec=None
         )
 
-        
-        """
-        van_output_channels = self.van_channels(
-            video_context=video_context
-        )
-        van_output_channels = self.van_channels_emb(van_output_channels)
-        outputs = torch.cat((outputs, van_output_channels), dim=1)
-        
-        #x = ctx_tf_output.flatten(1)
-        #outputs = self.classifier(x)
-        """
-
-
         return outputs
 
 
-def load_pretrained_van_sequential_v2(dataset_name: str,
-                                        add_classification_head: bool = True,
-                                        submodels_paths: dict = None):
-    #config_for_encoder_tf = get_config_for_timeseries_lib(
-    #        encoder_input_size=512-1, seq_len=15, hyperparams={})
+def load_pretrained_vam_branch(dataset_name: str,
+                                   add_classification_head: bool = True,
+                                   submodels_paths: dict = None):
+
     config_for_encoder_tf = get_config_for_timeseries_lib(
             encoder_input_size=512-1, seq_len=4, hyperparams={})
     
-    #config_for_context_timeseries = get_config_for_context_timeseries(
-    #    encoder_input_size=512-1, seq_len=15, hyperparams={})
-
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
     else:
         if dataset_name == "combined":
             checkpoint = "data/models/combined/VANSequentialV2/13Jun2025-20h24m35s_C15/checkpoint-10850"
         if dataset_name in "pie":
-            checkpoint = "data/models/pie/VANSequentialV2/24May2025-11h06m42s_VAS4"
             checkpoint = "data/models/pie/VANSequentialV2/weights_vansequential_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/VANSequentialV2/25Apr2025-09h43m46s_VAS1"
-            checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-539"
-            checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-18h35m55s/checkpoint-4851"
-            checkpoint = "data/models/jaad_all/VANSequentialV2/21May2025-08h54m54s/checkpoint-5390"
-            checkpoint = "data/models/jaad_all/VANSequentialV2/19May2025-21h18m46s_VAS2"
             checkpoint = "data/models/jaad_all/VANSequentialV2/weights_vansequential_jaad"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
@@ -423,14 +360,12 @@ def load_pretrained_van_sequential_v2(dataset_name: str,
         pretrained_model = VANEncoderTransformerForClassification.from_pretrained(
             checkpoint,
             config_for_timeseries_lib=config_for_encoder_tf,
-            #config_for_context_timeseries=config_for_context_timeseries,
             ignore_mismatched_sizes=True,
             dataset_name=dataset_name)
     else:
         pretrained_model = VANEncoderTransformer.from_pretrained(
             checkpoint,
             config_for_timeseries_lib=config_for_encoder_tf,
-            #config_for_context_timeseries=config_for_context_timeseries,
             ignore_mismatched_sizes=True,
             dataset_name=dataset_name,
             #submodels_paths=submodels_paths)
@@ -448,7 +383,7 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
                                   hyperparams: dict, 
                                   pred_len: int = None):
     
-    encoder_input_size = encoder_input_size + 1 # plus one to account for type identifiers
+    encoder_input_size = encoder_input_size + 1
     if hyperparams:
         hyperparams = hyperparams["EncoderTransformerForClassification"]
 
