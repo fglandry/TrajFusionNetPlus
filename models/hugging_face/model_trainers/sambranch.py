@@ -353,9 +353,9 @@ def load_pretrained_sam_branch(dataset_name: str,
         checkpoint = submodels_paths["enc_tf_path"]
     else:
         if dataset_name in ["pie", "combined"]:
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/weights_trajectorytfgraph_pie"
+            checkpoint = "data/models/pie/SAMBranch/weights_sambranch_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/weights_trajectorytfgraph_pie"
+            checkpoint = "data/models/jaad_all/SAMBranch/weights_sambranch_jaadall"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

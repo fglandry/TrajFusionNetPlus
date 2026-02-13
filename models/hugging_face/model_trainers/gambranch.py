@@ -418,11 +418,11 @@ def load_pretrained_gam_branch(dataset_name: str,
         checkpoint = submodels_paths["enc_tf_path"]
     else:
         if dataset_name == "combined":
-            checkpoint = "data/models/combined/GraphTransformer/09Apr2025-16h37m56s_CO9"
+            checkpoint = "data/models/combined/GAMBranch/09Apr2025-16h37m56s_CO9"
         if dataset_name in "pie":
-            checkpoint = "data/models/pie/GraphTransformer/weights_graphtransformer_pie"
+            checkpoint = "data/models/pie/GAMBranch/weights_gambranch_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/GraphTransformer/weights_graphtransformer_jaad"
+            checkpoint = "data/models/jaad_all/GAMBranch/weights_gambranch_jaadall"
 
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
