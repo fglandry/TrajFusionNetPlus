@@ -249,10 +249,10 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         
         # Get pretrained VAN Models -------------------------------------------
         if dataset_name == "jaad_all":
-            van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaad"
-            van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaad"
-            van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaad"
-            van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaad"
+            van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaadall"
+            van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaadall"
+            van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaadall"
+            van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaadall"
         elif dataset_name == "pie":
             van_min15_path = "data/models/pie/VAN/weights_van_min15_pie"
             van_min10_path = "data/models/pie/VAN/weights_van_min10_pie"
@@ -348,11 +348,11 @@ def load_pretrained_vam_branch(dataset_name: str,
         checkpoint = submodels_paths["enc_tf_path"]
     else:
         if dataset_name == "combined":
-            checkpoint = "data/models/combined/VANSequentialV2/13Jun2025-20h24m35s_C15/checkpoint-10850"
+            checkpoint = "data/models/combined/VAMBranch/13Jun2025-20h24m35s_C15/checkpoint-10850"
         if dataset_name in "pie":
-            checkpoint = "data/models/pie/VANSequentialV2/weights_vansequential_pie"
+            checkpoint = "data/models/pie/VAMBranch/weights_vambranch_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/VANSequentialV2/weights_vansequential_jaad"
+            checkpoint = "data/models/jaad_all/VAMBranch/weights_vambranch_jaadall"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

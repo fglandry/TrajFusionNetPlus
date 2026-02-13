@@ -389,9 +389,9 @@ def load_pretrained_trajfusionnet(dataset_name: str):
         checkpoint = "data/models/pie/TrajFusionNet/weights_trajfusionnet_pie"
         raise Exception()
     if dataset_name == "pie":
-        checkpoint = "data/models/pie/TrajFusionNetGraphV2/weights_trajfusionnetplus_pie"
+        checkpoint = "data/models/pie/TrajFusionNetPlus/weights_trajfusionnetplus_pie"
     elif dataset_name == "jaad_all":
-        checkpoint = "data/models/jaad_all/TrajFusionNetGraphV2/weights_trajfusionnetplus_jaad"
+        checkpoint = "data/models/jaad_all/TrajFusionNetPlus/weights_trajfusionnetplus_jaadall"
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         
