@@ -136,15 +136,13 @@ def run(config_file: str = None,
             get_trajectory_sequences(configs, free_memory,
                                      compute_cross_dataset_test=cross_test)
         
-        #model = "trajectorytransformerbgraph"
-        #submodel = "EncoderTransformerForClassification"
+        # Train or test model using different hyperparameter sets
+        # (if 'tune_hyperparameters' is set to false, the default hyperparameters are selected)
         model = ""
         submodel = ""
         hyperparams_orchestrator = HyperparamsOrchestrator(tune_hyperparameters, model, submodel)
         for i in range(hyperparams_orchestrator.nb_cases):
             hyperparams = hyperparams_orchestrator.get_next_case()
-            #if i < 12:
-            #    continue
             if hyperparams:
                 print(f"Training model with hyperparams set {i}: {str(hyperparams[model][submodel])}")
             saved_files_path = \

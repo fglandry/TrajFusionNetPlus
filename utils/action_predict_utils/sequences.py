@@ -8,9 +8,9 @@ from itertools import chain
 
 def get_trajectory_sequences(configs: dict, free_memory: bool = False,
                              compute_cross_dataset_test: bool = False):
-    """ Generate trajectory sequence as a function of dataset """
+    """ Generate trajectory sequence depending on selected dataset """
     
-    imdb, beh_seq_test_cross_dataset = None, None
+    imdb, imdb_jaad, imdb_pie, beh_seq_test_cross_dataset = None, None, None, None
     if configs['model_opts']['dataset'] == 'pie':
         imdb = PIE(data_path=os.environ.copy()['PIE_PATH'])
         if compute_cross_dataset_test:

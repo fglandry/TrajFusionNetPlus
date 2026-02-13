@@ -8,17 +8,13 @@ from torchsummary import summary
 from transformers import TrainingArguments, Trainer
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTrainedModel
 
-from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransformer
-from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
-from models.hugging_face.model_trainers.trajectorytransformerb import load_pretrained_encoder_transformer
 from models.hugging_face.model_trainers.trajectorytransformerbgraph import load_pretrained_trajectorytransformerbgraph
 from models.hugging_face.model_trainers.vansequentialv2 import load_pretrained_van_sequential_v2
-from models.hugging_face.model_trainers.visiontransformer import load_pretrained_vit
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TorchTimeseriesDataset, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
 from models.hugging_face.utils.create_optimizer import get_optimizer
-from models.custom_layers_pytorch import CrossAttention, SelfAttention
+from models.custom_layers_pytorch import SelfAttention
 from models.custom_layers_pytorch import SelfAttention
 from utils.data_load import DataGenerator
 from utils.action_predict_utils.run_in_subprocess import run_and_capture_model_path
@@ -28,7 +24,7 @@ NET_OUTER_DIM = 40
 DROPOUT = 0.1
 
 
-class TrajFusionNetGraphV2(HuggingFaceTimeSeriesModel):
+class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
 
     def train(self,
               data_train: dict,  
@@ -63,20 +59,12 @@ class TrajFusionNetGraphV2(HuggingFaceTimeSeriesModel):
             submodels_paths [dict]: dictionary containing paths to submodels saved on disk
         """
 
-        print("Starting model loading for model TrajFusionNetGraphV1 ===========================")
+        print("Starting model loading for model TrajFusionNetPlus ===========================")
 
         # Get hyperparameters (if specified) and model configs
         hyperparams = hyperparams.get(self.__class__.__name__.lower(), {}) if hyperparams else {}
         config_for_huggingface = TimeSeriesTransformerConfig()
         self.class_w = class_w
-
-        # Parameters for context transformer
-        timeseries_element = data_train['data'][0][0][0][-1]
-        timeseries_context_element = data_train['data'][0][0][0][2]
-        encoder_input_size = timeseries_element.shape[-1] + 30
-        context_len = timeseries_context_element.shape[-2]
-        config_for_context_timeseries = get_config_for_context_timeseries(
-            encoder_input_size, context_len, hyperparams)
 
         # If training end-to-end, start by training submodels
         if train_end_to_end:
@@ -85,7 +73,6 @@ class TrajFusionNetGraphV2(HuggingFaceTimeSeriesModel):
                 submodels_paths=submodels_paths)
 
         model = TrajFusionNetForClassification(config_for_huggingface,
-                                               config_for_context_timeseries=config_for_context_timeseries, 
                                                class_w=class_w,
                                                dataset_statistics=dataset_statistics,
                                                dataset_name=kwargs["model_opts"]["dataset_full"],
@@ -235,8 +222,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
                  class_w: list = None,
                  dataset_statistics: dict = None,
                  dataset_name: str = "",
-                 submodels_paths: dict = None,
-                 config_for_context_timeseries = None
+                 submodels_paths: dict = None
         ):
         super().__init__(config_for_huggingface)
         self._device = get_device()
