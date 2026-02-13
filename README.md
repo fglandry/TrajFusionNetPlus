@@ -54,14 +54,11 @@ To perform model inference, execute the following command:
 python3 train_test.py -c config_files/TrajFusionNetPlusInference.yaml --test_only
 ```
 
-The dataset to use and other config parameters can be modified in `config_files/TrajFusionNet.yaml`
+The dataset to use and other config parameters can be modified in `config_files/TrajFusionNetPlusInference.yaml`
 
 ## Training
 
-To train the model, run:
-```bash
-python3 train_test.py -c config_files/TrajFusionNetPlus.yaml --train_end_to_end
-```
+TBD
 
 ## Citation
 
