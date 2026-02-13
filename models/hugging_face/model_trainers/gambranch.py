@@ -7,21 +7,20 @@ from torchsummary import summary
 from transformers import TrainingArguments, Trainer
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTrainedModel
 
+from libs.time_series_library.models_tsl.Tokengt import Model as TokengtTransformer
 from libs.time_series_library.models_tsl.Transformer import Model as VanillaTransformerTSLModel
-from models.hugging_face.model_trainers.graphtransformer import load_pretrained_graph_transformer
-from models.hugging_face.model_trainers.trajectorytransformer import load_pretrained_trajectory_transformer
-from models.hugging_face.model_trainers.trajectorytransformergraph import load_pretrained_trajectory_transformer as load_pretrained_graph_trajectory_transformer
-#from models.hugging_face.model_trainers.trajectorytransformeronlyspeed import load_pretrained_trajectory_tf_only_speed
-#from models.hugging_face.model_trainers.trajectorytransformernospeed import load_pretrained_trajectory_transformer as load_pretrained_trajectory_tf_box
+from models.custom_layers_pytorch import CrossAttention
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
 from utils.data_load import DataGenerator
 
 PRED_LEN = 60
+NET_INNER_DIM = 512
+DROPOUT = 0.1
 
 
-class TrajectoryTransformerbgraph(HuggingFaceTimeSeriesModel):
+class GraphTransformer(HuggingFaceTimeSeriesModel):
 
     def train(self,
               data_train: dict,  
@@ -34,7 +33,6 @@ class TrajectoryTransformerbgraph(HuggingFaceTimeSeriesModel):
               dataset_statistics: dict = None,
               hyperparams: dict = None,
               test_only: bool = False,
-              class_w=None,
               *args, **kwargs):
         """ Train model
         Args:
@@ -48,12 +46,11 @@ class TrajectoryTransformerbgraph(HuggingFaceTimeSeriesModel):
         """
         
         print("Starting model loading for model Trajectory Transformer Classifier ======================")
-        self.class_w = class_w
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][0]
-        encoder_input_size = 19 # data_element.shape[-1]
-        seq_len = 75 # data_element.shape[-2] + PRED_LEN # 75
+        encoder_input_size = data_element.shape[-1]
+        seq_len = data_element.shape[-2] + PRED_LEN # 75
         
         # Get hyperparameters if specified for training run
         hyperparams = hyperparams.get(self.__class__.__name__.lower(), {}) if hyperparams else {}
@@ -61,41 +58,46 @@ class TrajectoryTransformerbgraph(HuggingFaceTimeSeriesModel):
         lr = hyperparam_vals.get("lr", train_opts["lr"])
         batch_size = hyperparam_vals.get("batch_size", batch_size)
         epochs = hyperparam_vals.get("epochs", epochs)
+
+        # Parameters for context transformer
+        timeseries_element = data_train['data'][0][0][0][-1]
+        timeseries_context_element = data_train['data'][0][0][0][2]
+        encoder_input_size = timeseries_element.shape[-1]
+        context_len = 15 # timeseries_context_element.shape[-2]
+        seq_len = 15
+        config_for_context_timeseries = get_config_for_context_timeseries(
+            encoder_input_size, context_len, hyperparams)
         
+        encoder_input_size = 512-1
         config_for_timeseries_lib = get_config_for_timeseries_lib(
             encoder_input_size, seq_len, hyperparams)
         config_for_huggingface = TimeSeriesTransformerConfig()
         self.num_labels = config_for_huggingface.num_labels
 
-        config_for_context_timeseries = get_config_for_context_timeseries(
-            15, 15, hyperparams)
-
-        model = EncoderTransformerForClassification(
+        model = GraphEncoderTransformerForClassification(
             config_for_huggingface, config_for_timeseries_lib,
             config_for_context_timeseries=config_for_context_timeseries,
             dataset_name=kwargs["model_opts"]["dataset_full"],
-            model_opts=kwargs["model_opts"],
-            class_w=class_w
+            model_opts=kwargs["model_opts"]
         )
         summary(model)
 
         # Get datasets
         train_dataset, val_dataset, val_transforms_dicts = get_timeseries_datasets(
             data_train, data_val, model, generator, None,
-            #get_image_transform=True,
+            get_image_transform=True, img_model_config=None,
             #get_seg_maps_transforms=True,
-            img_model_config=None,
             dataset_statistics=dataset_statistics)
 
         args = TrainingArguments(
             output_dir=model_path,
             remove_unused_columns=False,
-            evaluation_strategy="epoch",
-            save_strategy="epoch",
-            #evaluation_strategy="steps",
-            #save_strategy="steps",
-            #eval_steps=100,
-            #save_steps=100,
+            #evaluation_strategy="epoch",
+            #save_strategy="epoch",
+            evaluation_strategy="steps",
+            save_strategy="steps",
+            eval_steps=100,
+            save_steps=100,
             learning_rate=lr,
             per_device_train_batch_size=batch_size, 
             per_device_eval_batch_size=batch_size,
@@ -149,7 +151,7 @@ class TrajectoryTransformerbgraph(HuggingFaceTimeSeriesModel):
         print("Starting inference using trained model Trajectory Transformer Classifier ===========================")
 
         if test_only:
-            pretrained_model = load_pretrained_trajectorytransformerbgraph(dataset_name)
+            pretrained_model = load_pretrained_gam_branch(dataset_name)
             training_result["trainer"].model = pretrained_model
 
         return test_time_series_based_model(
@@ -160,33 +162,93 @@ class TrajectoryTransformerbgraph(HuggingFaceTimeSeriesModel):
         )
 
 
-class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
+class GraphEncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
     def __init__(self,
                  config_for_huggingface: TimeSeriesTransformerConfig,
                  config_for_timeseries_lib: dict = None,
-                 config_for_context_timeseries: dict = None,
                  dataset_name: str = None,
                  model_opts: dict = None,
-                 class_w = None
+                 config_for_context_timeseries = None
+        ):
+        super().__init__(config_for_huggingface, config_for_timeseries_lib)
+        self.num_labels = config_for_huggingface.num_labels
+
+        classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
+        
+        self.graph_tf = GraphEncoderTransformer(
+            config_for_huggingface,
+            config_for_timeseries_lib,
+            config_for_context_timeseries=config_for_context_timeseries
+        )
+
+        self.fc1 = nn.Linear(classifier_hidden_size, self.num_labels) # [40, 2]
+        
+        # Initialize weights and apply final processing
+        self.post_init()
+
+    def forward(
+        self,
+        trajectory_values: torch.Tensor = None,
+        timeseries_context: Optional[torch.Tensor] = None,
+        previous_timeseries_context: Optional[torch.Tensor] = None,
+        # normalized_trajectory_values: torch.Tensor = None,
+        labels: torch.Tensor = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        *args, **kwargs
+    ):
+        """ Args:
+        trajectory_values [torch.Tensor]: non-normalized observed trajectory values
+            of shape [batch, seq_len, enc]
+        normalized_trajectory_values [torch.Tensor]: normalized observed trajectory values
+            of shape [batch, seq_len, enc]
+        labels [torch.Tensor]: future target trajectory values of shape [batch, pred_len, enc]
+            (between time t=0 and time t=60)
+        """
+
+        assert output_hidden_states is None
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        outputs = self.graph_tf(
+            timeseries_context=timeseries_context
+        )
+
+        logits = self.fc1(outputs)
+
+        return compute_loss(outputs,
+                            logits,
+                            labels,
+                            self.config,
+                            self.num_labels,
+                            return_dict)
+    
+
+class GraphEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
+
+    base_model_prefix = "graph_tf"
+    
+    def __init__(self,
+                 config_for_huggingface: TimeSeriesTransformerConfig,
+                 config_for_timeseries_lib: dict = None,
+                 dataset_name: str = None,
+                 model_opts: dict = None,
+                 config_for_context_timeseries = None
         ):
         super().__init__(config_for_huggingface, config_for_timeseries_lib)
         self._device = get_device()
-        if class_w:
-            self.class_w = torch.tensor(class_w).to(self._device)
         self.num_labels = config_for_huggingface.num_labels
         self.timeseries_config = config_for_timeseries_lib
 
-        self.transformer = EncoderTransformer(config_for_huggingface, config_for_timeseries_lib,
-                                              config_for_context_timeseries=config_for_context_timeseries,
-                                              dataset_name=dataset_name,
-                                              model_opts=model_opts)
+        self.context_transformer = EncoderTransformer(
+            config_for_huggingface, config_for_context_timeseries)
 
-        classifier_hidden_size = config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
+        classifier_hidden_size = 40 # config_for_timeseries_lib.num_class # number of neurons in last linear layer at the end of model
         self.classifier = nn.Linear(
             classifier_hidden_size, config_for_huggingface.num_labels) \
             if config_for_huggingface.num_labels > 0 else nn.Identity()
 
-        self.fc1 = nn.Linear(classifier_hidden_size, self.num_labels) # [40, 2]
+        self.tsl_transformer = VanillaTransformerTSLModel(config_for_timeseries_lib)
+        
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -194,7 +256,6 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
     def forward(
         self,
         trajectory_values: torch.Tensor = None,
-        normalized_trajectory_values: torch.Tensor = None,
         timeseries_context: Optional[torch.Tensor] = None,
         labels: torch.Tensor = None,
         output_hidden_states: Optional[bool] = None,
@@ -212,24 +273,48 @@ class EncoderTransformerForClassification(TimeSeriesTransformerPreTrainedModel):
 
         assert output_hidden_states is None
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-        class_w = self.class_w if hasattr(self, 'class_w') else None
 
-        # Get encoder transformer model output
-        outputs = self.transformer(
-            trajectory_values,
-            normalized_trajectory_values,
-            timeseries_context
+        # Apply "Graph" Transformer to scene graph data
+        ctx_tf_output_0 = self.context_transformer(timeseries_context[:,0,:,:])
+        ctx_tf_output_1 = self.context_transformer(timeseries_context[:,1,:,:])
+        ctx_tf_output_2 = self.context_transformer(timeseries_context[:,2,:,:])
+        ctx_tf_output_3 = self.context_transformer(timeseries_context[:,3,:,:])
+        ctx_tf_output_4 = self.context_transformer(timeseries_context[:,4,:,:])
+        ctx_tf_output_5 = self.context_transformer(timeseries_context[:,5,:,:])
+        ctx_tf_output_6 = self.context_transformer(timeseries_context[:,6,:,:])
+        ctx_tf_output_7 = self.context_transformer(timeseries_context[:,7,:,:])
+        ctx_tf_output_8 = self.context_transformer(timeseries_context[:,8,:,:])
+        ctx_tf_output_9 = self.context_transformer(timeseries_context[:,9,:,:])
+        ctx_tf_output_10 = self.context_transformer(timeseries_context[:,10,:,:])
+        ctx_tf_output_11 = self.context_transformer(timeseries_context[:,11,:,:])
+        ctx_tf_output_12 = self.context_transformer(timeseries_context[:,12,:,:])
+        ctx_tf_output_13 = self.context_transformer(timeseries_context[:,13,:,:])
+        ctx_tf_output_14 = self.context_transformer(timeseries_context[:,14,:,:])
+
+        ctx_tf_output = torch.stack((ctx_tf_output_0,
+                                     ctx_tf_output_1,
+                                     ctx_tf_output_2,
+                                     ctx_tf_output_3,
+                                     ctx_tf_output_4,
+                                     ctx_tf_output_5,
+                                     ctx_tf_output_6,
+                                     ctx_tf_output_7,
+                                     ctx_tf_output_8,
+                                     ctx_tf_output_9,
+                                     ctx_tf_output_10,
+                                     ctx_tf_output_11,
+                                     ctx_tf_output_12,
+                                     ctx_tf_output_13,
+                                     ctx_tf_output_14), dim=1)
+
+        outputs = self.tsl_transformer(
+            x_enc=ctx_tf_output,
+            x_mark_enc=None,
+            x_dec=None,
+            x_mark_dec=None
         )
 
-        logits = self.fc1(outputs)
-
-        return compute_loss(outputs,
-                            logits,
-                            labels,
-                            self.config,
-                            self.num_labels,
-                            return_dict)
-                            #class_w=class_w)
+        return outputs
 
 
 class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
@@ -237,153 +322,127 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
     base_model_prefix = "transformer" # needs to be a class property
     
     def __init__(self,
-                 config_for_huggingface: TimeSeriesTransformerConfig,
-                 config_for_timeseries_lib: dict,
-                 config_for_context_timeseries = None,
-                 dataset_name: str = None,
-                 submodels_paths: dict = None,
-                 model_opts: dict = None
+                 config_for_huggingface,
+                 config_for_timeseries_lib
         ):
         super().__init__(config_for_huggingface)
-        model_opts = model_opts if model_opts else {}
-        self._dataset = dataset_name
-        self._device = get_device()
+        self.tsl_transformer_0 = TokengtTransformer(config_for_timeseries_lib[1]) 
+        self.cross_attn_dim = 1
 
-        self.tsl_transformer = VanillaTransformerTSLModel(config_for_timeseries_lib)
+        self.cross_attention_1 = CrossAttention(self.cross_attn_dim) # CrossAttention(20)
+        self.cross_attention_2 = CrossAttention(self.cross_attn_dim)
+        self.cross_attention_3 = CrossAttention(self.cross_attn_dim)
+        self.cross_attention_4 = CrossAttention(self.cross_attn_dim)
 
-
-        self.traj_TF = load_pretrained_trajectory_transformer(dataset_name,
-                                                              submodels_paths=submodels_paths,
-                                                              traj_model_path_override=model_opts.get("traj_model_path_override"))
-
-        self.graph_tf = load_pretrained_graph_transformer(
-            dataset_name,
-            add_classification_head=False,
-            #submodels_paths=submodels_paths
-        )
-
-        self.graph_enc = nn.Linear(512, 14)
+        self.road_emb_fc = nn.Linear(9, 5) # (9, self.cross_attn_dim)
+        self.sidewalk_emb_fc = nn.Linear(4, 5)
+        self.pedestrians_emb_fc = nn.Linear(8, 5)
+        self.vehicles_emb_fc = nn.Linear(8, 5)
+        
+        self.use_cross_attention = False
+        self.cross_attention_with_context_as_last_dim = False
+        self.cross_attention_with_context_as_second_dim = True
+        self.residual_at_the_end = False
 
         # Initialize weights and apply final processing
         self.post_init()
     
     def forward(
         self,
-        trajectory_values: torch.Tensor,
-        normalized_trajectory_values: torch.Tensor,
-        timeseries_context: Optional[torch.Tensor] = None,
+        trajectory_values,
         *args,
         **kwargs
     ):
-        """ Args:
-        trajectory_values [torch.Tensor]: non-normalized observed trajectory values
-            of shape [batch, seq_len, enc]
-        normalized_trajectory_values [torch.Tensor]: normalized observed trajectory values
-            of shape [batch, seq_len, enc]
-        """
-
-        # Trajectory prediction ====================================================
-        
-        # Predict trajectory (pedestrian bounding boxes and vehicle speed) between 
-        # t=0 and t=60
-        predicted_trajectory = self.traj_TF(
-             normalized_trajectory_values=normalized_trajectory_values
-        ).logits # [b, 60, 5]
-
-
-        # Crossing prediction ====================================================
-
-        # Add type identifier to indicate past observed trajectory (add 1) vs 
-        # predicted trajectory (add 0)
-        extra_dim_vals = torch.zeros((predicted_trajectory.shape[0],          # add 0 token
-                                      predicted_trajectory.shape[1], 1)).to(self._device)
-        predicted_trajectory = torch.cat((predicted_trajectory, extra_dim_vals), 2)
-        extra_dim_vals = torch.ones((normalized_trajectory_values.shape[0],   # add 1 token
-                                     normalized_trajectory_values.shape[1], 1)).to(self._device)
-        trajectory_values = torch.cat((normalized_trajectory_values, extra_dim_vals), 2)
-
-        predicted_trajectory = torch.cat([trajectory_values,
-                                          predicted_trajectory], dim=1) # [b, 75, 6]
-
-
-        outputs = []
-        for i in range(timeseries_context.size(1)):
-            if i in [0, 5, 10, 14]:  
-                _slice = timeseries_context[:, i]            
-                out = self.graph_tf.context_transformer(_slice)
-                # out = self.context_transformer(_slice)         
-                enc = self.graph_enc(out)
-                outputs.append(enc)
-        
-        timeseries_context = torch.zeros(timeseries_context.shape[0], 
-                                         timeseries_context.shape[1], outputs[0].shape[-1]).cuda()
-        timeseries_context[:, 11:15, :] = outputs[3].unsqueeze(1).expand(-1, 4, -1)
-        timeseries_context[:, 7:11, :] = outputs[2].unsqueeze(1).expand(-1, 4, -1)
-        timeseries_context[:, 3:7, :] = outputs[1].unsqueeze(1).expand(-1, 4, -1)
-        timeseries_context[:, 0:3, :] = outputs[0].unsqueeze(1).expand(-1, 3, -1)     
-
-        batch_size = predicted_trajectory.size(0)
-        first_15 = torch.cat([predicted_trajectory[:, :15, :],
-                              timeseries_context], dim=2)  # shape: [b, 15, 6 + dim]
-
-        zeros_rest = torch.zeros((batch_size, 60, timeseries_context.shape[2]), 
-                                  device=self.device, dtype=predicted_trajectory.dtype)
-        last_60 = torch.cat([predicted_trajectory[:, 15:, :],
-                             zeros_rest], dim=2) # shape: [b, 60, 6 + dim]
-
-        predicted_trajectory = torch.cat([first_15, last_60], dim=1) 
+        if self.use_cross_attention:
+            trajectory_values = self._apply_cross_attention(trajectory_values)
 
         # Get vanilla transformer model output
-        outputs = self.tsl_transformer(
-            x_enc=predicted_trajectory,
+        outputs = self.tsl_transformer_0(
+            x_enc=trajectory_values,
             x_mark_enc=None,
             x_dec=None,
             x_mark_dec=None
         )
 
-        return outputs # [b, 40]
+        return outputs
+    
+    def _apply_cross_attention(self, trajectory_values):
+        """Apply inter-modal cross-attention to trajectory values.
+        """
+        # Compute inter-modal cross-attention
+        road_values = nn.ReLU()(self.road_emb_fc(
+            torch.squeeze(trajectory_values[:,0:9,:], -1)))
+        sidewalk_values = nn.ReLU()(self.sidewalk_emb_fc(
+            torch.squeeze(trajectory_values[:,9:13,:], -1)))
+        pedestrians_values = nn.ReLU()(self.pedestrians_emb_fc(
+            torch.squeeze(trajectory_values[:,13:21,:], -1)))
+        vehicles_values = nn.ReLU()(self.vehicles_emb_fc(
+            torch.squeeze(trajectory_values[:,21:29,:], -1)))
+        
+        if self.cross_attention_with_context_as_second_dim:
+            unsqueeze_dim = 2 # shape=(batch, dim, 1)
+        if self.cross_attention_with_context_as_last_dim:
+            unsqueeze_dim = 1 # shape=(batch, 1, dim)
+        road_values = road_values.unsqueeze(unsqueeze_dim) 
+        sidewalk_values = sidewalk_values.unsqueeze(unsqueeze_dim)
+        pedestrians_values = pedestrians_values.unsqueeze(unsqueeze_dim)
+        vehicles_values = vehicles_values.unsqueeze(unsqueeze_dim)
+        
+        cross_attn_ctx_1, attn_1 = self.cross_attention_1(road_values, pedestrians_values)
+        cross_attn_ctx_2, attn_2 = self.cross_attention_2(road_values, vehicles_values)
+        cross_attn_ctx_3, attn_3 = self.cross_attention_3(sidewalk_values, pedestrians_values)
+        cross_attn_ctx_4, attn_4 = self.cross_attention_4(pedestrians_values, vehicles_values)
+        
+        if self.cross_attention_with_context_as_last_dim:
+            cross_attn_ctx_1 = cross_attn_ctx_1.swapaxes(1,2)
+            cross_attn_ctx_2 = cross_attn_ctx_2.swapaxes(1,2)
+            cross_attn_ctx_3 = cross_attn_ctx_3.swapaxes(1,2)
+            cross_attn_ctx_4 = cross_attn_ctx_4.swapaxes(1,2)
 
+        trajectory_values = torch.cat([
+            trajectory_values, cross_attn_ctx_1, cross_attn_ctx_2,
+            cross_attn_ctx_3, cross_attn_ctx_4], dim=1)
+        
+        return trajectory_values
 
-def load_pretrained_trajectorytransformerbgraph(dataset_name: str,
+def load_pretrained_gam_branch(dataset_name: str,
                                         add_classification_head: bool = True,
                                         submodels_paths: dict = None):
     config_for_encoder_tf = get_config_for_timeseries_lib(
-            encoder_input_size=19, seq_len=75, hyperparams={})
+            encoder_input_size=512-1, seq_len=15, hyperparams={})
+    
+    config_for_context_timeseries = get_config_for_context_timeseries(
+        encoder_input_size=512-1, seq_len=15, hyperparams={})
+
     if submodels_paths:
         checkpoint = submodels_paths["enc_tf_path"]
     else:
-        if dataset_name in ["pie", "combined"]:
-            checkpoint = "data/models/pie/TrajectoryTransformerb/weights_trajectorytransformerb_pie"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/03May2025-23h02m14s/checkpoint-10166"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/03May2025-23h02m14s"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/14May2025-21h21m50s/checkpoint-2700"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/14May2025-21h38m26s/checkpoint-17940"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/17May2025-14h57m41s_TTB3"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/21May2025-14h20m04s_TTB4"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/28May2025-16h10m41s_TRIAL8"
-            checkpoint = "data/models/pie/TrajectoryTransformerbgraph/weights_trajectorytfgraph_pie"
+        if dataset_name == "combined":
+            checkpoint = "data/models/combined/GraphTransformer/09Apr2025-16h37m56s_CO9"
+        if dataset_name in "pie":
+            checkpoint = "data/models/pie/GraphTransformer/weights_graphtransformer_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerb/weights_trajectorytransformerb_jaadall"
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/21May2025-15h00m56s_TTB5"
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/01Jun2025-18h38m19s_TTB6"
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/21Jul2025-22h27m15s_TTB7"
-            checkpoint = "data/models/jaad_all/TrajectoryTransformerbgraph/weights_trajectorytfgraph_pie"
+            checkpoint = "data/models/jaad_all/GraphTransformer/weights_graphtransformer_jaad"
+
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 
     if add_classification_head:
-        pretrained_model = EncoderTransformerForClassification.from_pretrained(
+        pretrained_model = GraphEncoderTransformerForClassification.from_pretrained(
             checkpoint,
             config_for_timeseries_lib=config_for_encoder_tf,
+            config_for_context_timeseries=config_for_context_timeseries,
             ignore_mismatched_sizes=True,
             dataset_name=dataset_name)
     else:
-        pretrained_model = EncoderTransformer.from_pretrained(
+        pretrained_model = GraphEncoderTransformer.from_pretrained(
             checkpoint,
             config_for_timeseries_lib=config_for_encoder_tf,
+            config_for_context_timeseries=config_for_context_timeseries,
             ignore_mismatched_sizes=True,
-            dataset_name=dataset_name,
-            submodels_paths=submodels_paths)
+            #dataset_name=dataset_name,
+            #submodels_paths=submodels_paths)
+        )
     
     # Make all layers untrainable
     for child in pretrained_model.children():
@@ -397,7 +456,7 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
                                   hyperparams: dict, 
                                   pred_len: int = None):
     
-    encoder_input_size = encoder_input_size + 1 # plus one to account for type identifiers
+    encoder_input_size = encoder_input_size + 1
     if hyperparams:
         hyperparams = hyperparams["EncoderTransformerForClassification"]
 
@@ -407,15 +466,15 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
         "pred_len": pred_len if pred_len else PRED_LEN,
         "output_attention": False, # whether to output attention in encoder; note: not used by vanilla transformer model
         "enc_in": encoder_input_size, # encoder input size - default value,
-        "d_model": hyperparams.get("d_model", 512), # dimension of model - default value 
+        "d_model": hyperparams.get("d_model", 128), # dimension of model - default value 
         "embed": "learned", # time features encoding; note: not used in classification task by vanilla transformer model
         "freq": "h", # freq for time features encoding; note: not used in classification task by vanilla transformer model
         "dropout": 0.1, # default,
         "factor": 1, # attn factor; note: not used by vanilla transformer model
-        "n_heads": hyperparams.get("n_heads", 16), # num of heads
+        "n_heads": hyperparams.get("n_heads", 12), # num of heads
         "d_ff": hyperparams.get("d_ff", 1024), # dimension of fcn (or 2048)
         "activation": "gelu",
-        "e_layers": hyperparams.get("e_layers", 4), # num of encoder layers (or 3)
+        "e_layers": hyperparams.get("e_layers", 6), # num of encoder layers (or 3)
         "seq_len": seq_len, # input sequence length
         "num_class": 40, # number of neurons in last Linear layer at the end of model
         "label_len": 15,
@@ -426,8 +485,7 @@ def get_config_for_timeseries_lib(encoder_input_size: int,
     return config_for_timeseries_lib
 
 
-def get_config_for_context_timeseries(encoder_input_size, seq_len, hyperparams, 
-                                      add_graph_context_to_lstm=False):
+def get_config_for_context_timeseries(encoder_input_size, seq_len, hyperparams):
 
     hyperparams = hyperparams.get("timeseries_tf", {})
 
@@ -441,14 +499,14 @@ def get_config_for_context_timeseries(encoder_input_size, seq_len, hyperparams,
         "d_model": 128, # dimension of model - default value 
         "embed": "learned", # time features encoding; note: not used in classification task by vanilla transformer model
         "freq": "h", # freq for time features encoding; note: not used in classification task by vanilla transformer model
-        "dropout": 0.1, # default,
+        "dropout": DROPOUT, # default,
         "factor": 1, # attn factor; note: not used by vanilla transformer model
         "n_heads": hyperparams.get("n_heads", 12), # num of heads
         "d_ff": hyperparams.get("d_ff", 1024), # dimension of fcn (or 2048)
         "activation": "gelu",
         "e_layers": hyperparams.get("e_layers", 6), # num of encoder layers (or 3)
         "seq_len": seq_len, # + 20, # input sequence length
-        "num_class": 512, # number of neurons in last Linear layer at the end of model
+        "num_class": NET_INNER_DIM, # number of neurons in last Linear layer at the end of model
         # ---------------------------------------------------------------------------------
         "label_len": 1, # Timesnet - start token length
         "num_kernels": 6, # Timesnet - for Inception

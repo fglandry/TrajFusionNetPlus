@@ -217,7 +217,19 @@ class GraphTransformer(BaseTransformerModel,
                  **kwargs):
         super().__init__(**kwargs)
 
-class VANSequential(BaseTransformerModel, 
+class SAMBranch(VanillaTransformer, 
+                ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class GAMBranch(BaseTransformerModel, 
+                       ActionPredict):
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+
+class VAMBranch(BaseTransformerModel, 
                     ActionPredict):
     def __init__(self,
                  **kwargs):

@@ -22,7 +22,7 @@ def get_timeseries_datasets(data_train: dict, data_val: Any,
                             img_model_config: dict = None,
                             ignore_sem_map: bool = True,
                             dataset_statistics: dict = None):
-    """ Get dataset object for time series
+    """ Create training and validation time series datasets 
     Args:
         data_train [dict]: training data
         data_val [Any]: validation data
