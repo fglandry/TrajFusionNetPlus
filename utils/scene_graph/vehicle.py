@@ -88,13 +88,9 @@ def _get_occurences_of_vehicles(data, i, t, model, map, scene_context,
     #kept_groups.sort(key=lambda x: x["nb_pixels"], reverse=True)
     groups.sort(key=lambda x: x["current_ped_dist"])
     nb_groups = len(groups)
-    nb_vehicles = nb_groups
     kept_groups = groups[0:min(NB_GROUPS_TO_KEEP, nb_groups)]
     nb_empty_groups = NB_GROUPS_TO_KEEP - nb_groups if nb_groups < NB_GROUPS_TO_KEEP else 0
-    if len(kept_groups) == 1:
-        test = 10
-    if len(kept_groups) == 2:
-        test = 10
+
     for g in kept_groups:
         if not graphormer_encoding:
             groups_features.extend([

@@ -320,7 +320,6 @@ class ActionPredict(object):
                             img_features = TrajectoryOverlays(model_opts, submodels_paths).compute_trajectory_overlays(
                                     img_features, feature_type, full_bbox_sequences, full_rel_bbox_seq, full_veh_speed, i)
                             img_features = cv2.resize(img_features, target_dim)
-                            #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/sem_output_{str(time.time()).replace('.', '_')}.png", img_features)
                         # print(f"Processing {img_save_path} ...")
                         show_image(img_features) if debug else None
 
