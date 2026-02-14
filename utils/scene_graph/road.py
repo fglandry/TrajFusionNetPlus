@@ -29,6 +29,8 @@ def get_road_traffic_element(data, i, t, model, map, scene_context,
         road_min_dist, road_min_angle, ped_sem_category = \
         get_distances_between_pedestrian_and_road(ped_coord, map, map_size)
 
+    normalized_ped_coord = [ped_coord[0]/map_size, ped_coord[1]/map_size]
+
     if not graphormer_encoding:
         # (x, y, d, theta)
         # 1. road center of mass

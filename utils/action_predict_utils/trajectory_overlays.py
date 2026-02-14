@@ -31,7 +31,9 @@ class TrajectoryOverlays(metaclass=Singleton):
             None, None, 
             self.dataset_statistics, model_opts,
             include_labels=True, 
-            use_precomputed_values=True)
+            use_precomputed_values=True,
+            trajectory_overlays=True
+        )
         
         if "Small" in model_opts["model"]:
             from models.hugging_face.model_trainers.smalltrajectorytransformer import \
@@ -51,7 +53,9 @@ class TrajectoryOverlays(metaclass=Singleton):
             if self._dataset in ["pie", "combined"]:
                 checkpoint = "data/models/pie/TrajectoryTransformer/weights_trajectorytransformer_pie"
             elif self._dataset == "jaad_all":
+                #TODO!: change checkpoint
                 checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
+                #checkpoint = "/home/francois/MASTER/TrajFusionNet/data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
             elif self._dataset == "jaad_beh":
                 checkpoint = "data/models/jaad_beh/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
 

@@ -129,7 +129,8 @@ def _calculate_stats_for_img_like_data(data_type: str, means: dict,
 def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray, 
                                         dataset_statistics: dict, model_opts: dict,
                                         include_labels: bool = False,
-                                        use_precomputed_values: bool = False):
+                                        use_precomputed_values: bool = False,
+                                        trajectory_overlays: bool = False):
     
     if use_precomputed_values:
         dataset_statistics["dataset_maxs"], dataset_statistics["dataset_mins"] = {}, {}
@@ -142,6 +143,12 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
             dataset_statistics["dataset_std_devs"]["trajectory"] = [161.24783689412033, 14.863155394437634, 161.40917654572766, 29.585598109148503, 0.2441041362407904] # 0.05964588498939262, 0.24599167728011406, 0.095895595316637, 1.350200146298904]
             dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 126.0, 1864.0, 350.0, 0.9979166666666667] # 0.7694444444444445, 0.9994791666666667, 0.9990740740740741, 4.0
             dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -189.0, -1655.0, -120.0, 0.0] # 0.31203703703703706, 0.0078125, 0.4546296296296296, 0.0
+
+            if trajectory_overlays:
+                dataset_statistics["dataset_means"]["trajectory"] = [-7.817597278751057, -2.797630704496746, 0.7966554592107592, 15.765265538056195, 2.4889659647260074]
+                dataset_statistics["dataset_std_devs"]["trajectory"] = [161.24783689412033, 14.863155394437634, 161.40917654572766, 29.585598109148503, 1.4469956924143323]
+                dataset_statistics["dataset_maxs"]["trajectory"] = [1828.0, 126.0, 1864.0, 350.0, 4.0]
+                dataset_statistics["dataset_mins"]["trajectory"] = [-1654.0, -189.0, -1655.0, -120.0, 0.0]
 
         elif model_opts["dataset_full"] == "jaad_beh":
 
@@ -192,6 +199,7 @@ def calculate_stats_for_trajectory_data(data: Any, labels: np.ndarray,
         dataset_statistics["dataset_maxs"]["trajectory"] = list(maxs)
         dataset_statistics["dataset_mins"]["trajectory"] = list(mins)
 
+    return
 
 def _format_img(img: np.ndarray):
     img = img / 255 # Normalize to a value between 0 and 1

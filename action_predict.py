@@ -235,6 +235,13 @@ class ActionPredict(object):
                 else:
                     img_save_path = os.path.join(img_save_folder, img_name + '_' + p[0] + '.pkl')
 
+                # TODO!: remove
+                # data/features/jaad_all/scene_video_with_ped_overlays_combined/images/video_0001/00562_0_1_4.pkl
+                #feat1 = open_pickle_file(f"data/{img_save_path.split('/', 1)[-1]}")
+                #feat2 = open_pickle_file(f"_data/{img_save_path.split('/', 1)[-1]}")
+                #cv2.imwrite("/home/francois/MASTER/TrajFusionNetPlus/data/test/feat1.png", feat1) 
+                #cv2.imwrite("/home/francois/MASTER/TrajFusionNetPlus/data/test/feat2.png", feat2)
+
                 # Check whether the file exists
                 file_already_exists = os.path.exists(img_save_path) and not regen_data
                 if file_already_exists and not concatenate_frames:
@@ -293,6 +300,15 @@ class ActionPredict(object):
                                         img_id=imp,
                                         data_raw=data_raw)
                                 img_features = cv2.resize(img_features, target_dim)
+                                #TODO!: remove
+                                #feat1 = open_pickle_file(f"data/{img_save_path.split('/', 1)[-1]}")
+                                #feat1 = img_features
+                                #feat2 = open_pickle_file(f"_data/{img_save_path.split('/', 1)[-1]}")
+                                #feat3 = open_pickle_file(f"/home/francois/MASTER/TrajFusionNet/data/features/jaad_all/scene_context_with_ped_overlays/images/{img_save_path.split('/', 5)[-1]}")
+                                #cv2.imwrite("/home/francois/MASTER/TrajFusionNetPlus/data/test/feat1.png", feat1) 
+                                #cv2.imwrite("/home/francois/MASTER/TrajFusionNetPlus/data/test/feat_old.png", feat2)
+                                #cv2.imwrite("/home/francois/MASTER/TrajFusionNetPlus/data/test/feat_.png", feat3)
+                                test = 10
                             else: # ped overlays will be computed later
                                 img_features = img_data.copy()
                             #show_image(img_features) if debug else None
