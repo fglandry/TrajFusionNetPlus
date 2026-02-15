@@ -42,7 +42,7 @@ export PIE_PATH=<pie_dataset_location>
 
 ## Inference
 
-To run model inference, first download the model weights from Google Drive: https://drive.google.com/drive/folders/1mXQL5W0LoYa5vZOI_SFIkFkSuyaL0ux8
+To run model inference, first download the model weights from Dropbox: https://www.dropbox.com/scl/fo/b66bmekyms6wiuynmfx5c/AH-tzUh3a3YlhVHxsiQzb1o?rlkey=ddjqsun0wghsq8fvn9jrapet0&st=lfo9hu91&dl=0
 
 Extract the zip file to the data/ directory by running:
 ```bash
