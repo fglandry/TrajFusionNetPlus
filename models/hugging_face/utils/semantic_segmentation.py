@@ -74,40 +74,6 @@ class SegformerForSemanticSegmentationWrapper(metaclass=Singleton):
         class_idx_img_np = class_idx_tsr.cpu().numpy()  # Explicitly move to CPU before converting to numpy
         return class_idx_img_np, class_idx_tsr, image
 
-    def run_batch(self, img_list, debug=False):
-        """Process multiple images in a batch for better GPU utilization."""
-        images = []
-        for img_features in img_list:
-            img_features = cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB)
-            images.append(Image.fromarray(img_features))
-        
-        # Process all images at once
-        inputs = self.processor(images=images, return_tensors="pt")
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        
-        if self.compute_time:
-            start_time = time.time()
-        
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-        
-        if self.compute_time:
-            total_time = time.time() - start_time
-            print(f"Time to compute {len(img_list)} images: {total_time}")
-            self.time_estimates.append(total_time)
-        
-        logits = outputs.logits
-        
-        # Process each image in batch
-        results = []
-        for i, image in enumerate(images):
-            batch_logits = logits[i:i+1]
-            class_idx_tsr = self.get_segmentation_map(batch_logits, image)
-            class_idx_img_np = class_idx_tsr.cpu().numpy()
-            results.append((class_idx_img_np, class_idx_tsr, image))
-        
-        return results
-
     def get_calc_time(self):
         avg_time = statistics.mean(self.time_estimates)
         print(f"Average time per segmentation computation: {avg_time}")
