@@ -17,8 +17,8 @@ def get_semantic_segmentation(img_features: np.ndarray,
                               compute_time=False,
                               use_segformer=True,
                               use_deeplabv3=False,
-                              debug=True):
-    """ 
+                              debug=False):
+    """ Apply semantic segmentation to input img_features
     Args:
         img_features: image features after initial processing
         img_data: original image data
@@ -34,7 +34,6 @@ def get_semantic_segmentation(img_features: np.ndarray,
             elif 'scene_context_with_segmentation' in feature_type or 'scene_video_with_segmentation' in feature_type:
                 mask = add_segmentation_map_to_img_features(SEGFORMER_MODEL, img_features, output, 
                                                             feature_type, class_idx_tsr, image)
-                #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/sem_output_{str(time.time()).replace('.', '_')}.png", mask[..., 0:3])
         elif use_deeplabv3:
             DEEPLABV3_MODEL = DeepLabV3ForSemanticSegmentationWrapper(
                 compute_time=compute_time)
@@ -69,7 +68,6 @@ def add_segmentation_map_to_img_features(seg_model, img_features, segm_data, fea
     elif 'segmentation_v3' in feature_type:
         # Get combination of img and segmentation map (0.5 and 0.5 weights)
         img_features, _, _ = seg_model.get_img_combined_with_segmentation_map(class_idx_tsr, image)
-        #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/sem_output_{str(time.time()).replace('.', '_')}.png", img_features)
     elif 'segmentation_v4' in feature_type:
         # Get segmentation map only using 3 channels
         img_features, _, _ = seg_model.get_img_combined_with_segmentation_map(class_idx_tsr, image,
@@ -87,17 +85,14 @@ def add_segmentation_map_to_img_features(seg_model, img_features, segm_data, fea
     elif 'segmentation_v8' in feature_type:
         veh_idx = 13
         img_features[segm_data == veh_idx, 0:2] = np.array(ade_palette()[-1])[0:2]
-        test = 10
     elif 'segmentation_v9' in feature_type:
         road_idx = 0
         sidewalk_idx = 1
         img_features[segm_data == road_idx, 0] = np.array(ade_palette()[-4])[0]
         img_features[segm_data == sidewalk_idx, 0] = np.array(ade_palette()[-5])[0]
-        test = 10
     else:
         segm_data = np.expand_dims(segm_data, 2)    
         img_features = np.append(img_features, segm_data, axis=2)
-    #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/sem_output_{str(time.time()).replace('.', '_')}.png", img_features[..., 0]*4)
     return img_features
 
 

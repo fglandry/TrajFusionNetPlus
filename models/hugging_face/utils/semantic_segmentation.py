@@ -32,28 +32,29 @@ class SegformerForSemanticSegmentationWrapper(metaclass=Singleton):
         # "matei-dorian/segformer-b5-finetuned-human-parsing" -> results are not that great, especially for smaller pedestrians
         # "mattmdjaga/segformer_b2_clothes" -> potentially even worse than the previous one
         # "nvidia/segformer-b3-finetuned-cityscapes-1024-1024" -> sometimes very useful, but most times it is not
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b3-finetuned-cityscapes-1024-1024")
-        self.model = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b3-finetuned-cityscapes-1024-1024")
+        self.model = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b3-finetuned-cityscapes-1024-1024").to(self.device)
+        self.model.eval()  # Set to eval mode to disable dropout and batch norm updates
         self.extractor = SegformerFeatureExtractor()
         self.compute_time = compute_time
         if self.compute_time:
             self.time_estimates = []
 
     def run(self, img_features: np.ndarray, debug=False):
-        #url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-        #image = Image.open(requests.get(url, stream=True).raw)
-        #show_image(img_features)
 
-        img_features = cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB) # is the model input really RGB?
+        img_features = cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(img_features)
-        #image.show()
 
         inputs = self.processor(images=image, return_tensors="pt")
+        # Move inputs to GPU
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         if self.compute_time:
             start_time = time.time()
 
-        outputs = self.model(**inputs)
+        with torch.no_grad():  # Disable gradient computation for inference
+            outputs = self.model(**inputs)
 
         if self.compute_time:
             total_time = time.time() - start_time
@@ -68,12 +69,9 @@ class SegformerForSemanticSegmentationWrapper(metaclass=Singleton):
         class_idx_tsr = self.get_segmentation_map(logits, image)
 
         if debug:
-            #list(logits.shape)
             self.display_segmentation_map(class_idx_tsr, image)
 
-        class_idx_img_np = class_idx_tsr.numpy()
-        #class_idx_np = np.expand_dims(class_idx_tsr.numpy(), axis=2)
-        #cv2.imshow("image", class_idx_np)
+        class_idx_img_np = class_idx_tsr.cpu().numpy()  # Explicitly move to CPU before converting to numpy
         return class_idx_img_np, class_idx_tsr, image
 
     def get_calc_time(self):

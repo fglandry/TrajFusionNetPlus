@@ -1,6 +1,9 @@
 *pyc
 __pycache__/
 
+/_data
+/__data
+
 /data
 data/*
 !data/

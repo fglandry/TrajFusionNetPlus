@@ -28,9 +28,7 @@ def get_road_traffic_element(data, i, t, model, map, scene_context,
     road_cm_coord, road_cm_dist, road_cm_angle, road_min_coord, \
         road_min_dist, road_min_angle, ped_sem_category = \
         get_distances_between_pedestrian_and_road(ped_coord, map, map_size)
-    
-    # hu_moments = _get_hu_moments_from_road_segm_map(map, road_idx)
-    
+
     normalized_ped_coord = [ped_coord[0]/map_size, ped_coord[1]/map_size]
 
     if not graphormer_encoding:
@@ -51,8 +49,7 @@ def get_road_traffic_element(data, i, t, model, map, scene_context,
             [road_min_dist, road_min_angle],          # edge02_road_min_dist
             # [ped_sem_category, ped_sem_category]
         ])
-        # occurences.extend(hu_moments)
-        # occurences = np.concatenate([occurences, hu_moments], axis=1).tolist()
+
     return occurences
 
 def get_distances_between_pedestrian_and_road(

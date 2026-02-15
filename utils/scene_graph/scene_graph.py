@@ -39,7 +39,6 @@ def get_scene_graph(data, processed_data, model_opts,
                     data_type="train",
                     get_previous_scene_graph=False, 
                     debug=False,
-                    format_for_graphormer=True,
                     action_predict_ref=None,
                     trajectories=False):
     video_graph = False
@@ -82,8 +81,8 @@ def get_scene_graph(data, processed_data, model_opts,
     else:
         scene_type = "scene_graph" if get_previous_scene_graph else "scene_graph" # TODO: this is a temporary workaround
     path_to_features, _ = get_path(save_folder=scene_type,
-                               dataset=model_opts["dataset_full"],
-                               save_root_folder='data/features')
+                                   dataset=model_opts["dataset_full"],
+                                   save_root_folder='data/features')
     feature_folder_path = os.path.join(path_to_features, data_type)
     print(f"Generating features type={scene_type}, save_path={feature_folder_path}")
 
@@ -92,7 +91,6 @@ def get_scene_graph(data, processed_data, model_opts,
         img_id = semantic_maps[i][0].rsplit("/", 1)[-1].split(".")[0]
         if model_opts["seq_type"] == "trajectory":
             feature_save_path = os.path.join(feature_folder_path, f"{scene_type}_seq_{i}_{img_id}")
-            #feature_save_path = os.path.join(feature_folder_path, f"{scene_type}_{img_id}")
         else:
             feature_save_path = os.path.join(feature_folder_path, f"{scene_type}_seq_{i}")
         feature_save_path = f"{feature_save_path}.pkl" if not trajectories else f"{feature_save_path}_traj.pkl"
@@ -125,10 +123,6 @@ def get_scene_graph(data, processed_data, model_opts,
             feature = [sorted_occurences] * seq_len # copy features for all sequence idx
             features.append(feature)
             save_data_in_pkl(feature_folder_path, feature_save_path, feature)
-        
-
-    #if format_for_graphormer:
-    #    features = _format_data_for_graphormer(features)
 
     features = np.array(features)
     feat_size = features.shape[1:]
@@ -140,13 +134,6 @@ def get_scene_graph_for_timestep(map_path, data, i, t, map_size,
                                  trajectories=False,
                                  debug=False):
     map = open_pickle_file(map_path)
-    """
-    if i==200:
-        scene_context_path = scene_context[i][0]
-        scene_img = open_pickle_file(scene_context_path)
-        SEGFORMER_MODEL.display_segmentation_map(map, scene_img, get_img_combined_with_segmentation_map=True)
-    debug = False # ToDo: remove
-    """
 
     occurences = []
 
@@ -175,7 +162,6 @@ def get_scene_graph_for_timestep(map_path, data, i, t, map_size,
         trajectories=trajectories, debug=debug)
     
     vertex_edges_indices = [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0] # 1 is a vertex, 0 is an edge
-    # vertex_edges_indices = [1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2]
     vertices = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==1]
     edges = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==0]
     others = [e for i, e in enumerate(occurences) if vertex_edges_indices[i]==2]

@@ -100,15 +100,11 @@ def _get_occurences_of_pedestrians(data, i, t, model, map, scene_context,
     groups_features = []
     kept_groups = [g for g in groups if not g["is_current_ped"]]
     kept_groups.sort(key=lambda x: x["nb_pixels"], reverse=True)
-    #kept_groups.sort(key=lambda x: x["current_ped_dist"])
     nb_kept_groups = len(kept_groups)
-    nb_pedestrians = nb_kept_groups 
+
     kept_groups = kept_groups[0:min(NB_GROUPS_TO_KEEP, nb_kept_groups)]
     nb_empty_groups = NB_GROUPS_TO_KEEP - nb_kept_groups if nb_kept_groups < NB_GROUPS_TO_KEEP else 0
-    if len(kept_groups) == 1:
-        test = 10
-    if len(kept_groups) == 2:
-        test = 10
+
     for g in kept_groups:
         if not graphormer_encoding:
             groups_features.extend([
@@ -153,12 +149,6 @@ def get_target_pedestrian_traffic_element(data, i, t, map, map_size, occurences,
                                           debug=False):
     features = []
 
-    """
-    for d_type in model_opts['obs_input_type']:
-        if "box" in d_type: # ToDo: verify if that always holds
-            last_seq_element = data[d_type][i][-1]
-            features.extend(last_seq_element.tolist())
-    """
     MAX_DIST = int(math.hypot(map.shape[0], map.shape[1]))
     min_coord = [-1, -1]
     min_angle = math.pi

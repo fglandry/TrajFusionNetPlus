@@ -9,8 +9,8 @@ from utils.utils import Singleton
 
 
 class TrajectoryOverlays(metaclass=Singleton):
-    """ Class to compute pedestrian trajectory overlays as part of the
-        Visual Attention Module (VAM)
+    """ Class to compute pedestrian trajectory overlays (to be used
+        by the Visual Attention Module - VAM)
     """
 
     def __init__(self,
@@ -31,7 +31,9 @@ class TrajectoryOverlays(metaclass=Singleton):
             None, None, 
             self.dataset_statistics, model_opts,
             include_labels=True, 
-            use_precomputed_values=True)
+            use_precomputed_values=True,
+            trajectory_overlays=True
+        )
         
         if "Small" in model_opts["model"]:
             from models.hugging_face.model_trainers.smalltrajectorytransformer import \
@@ -124,7 +126,7 @@ class TrajectoryOverlays(metaclass=Singleton):
 
         if "with_ped_overlays_previous" in feature_type or \
             "with_ped_overlays_combined" in feature_type:
-            # Add observed bounding boxes as overlays on image (first image in sequence)
+            # Add observed bounding boxes as overlays on image
             for idx, coords in enumerate(bbox_sequence):
                 if idx == 0 or ((idx+1) % 5 == 0): # add first bbox and then every 5th
                     b_org = list(map(int, coords[0:4])).copy()
@@ -135,7 +137,7 @@ class TrajectoryOverlays(metaclass=Singleton):
 
         if "with_ped_overlays" in feature_type or \
             "with_ped_overlays_combined" in feature_type:
-            # Add predicted bounding boxes as overlays on image (last image in sequence)
+            # Add predicted bounding boxes as overlays on image
             for idx, coords in enumerate(absolute_pred_coords):
                 b_org = list(map(int, coords[0:4])).copy()
                 if check_if_bbox_outside_image(img_features, b_org):
