@@ -2,19 +2,17 @@ model_opts:
   model: GAMBranch
   apply_class_weights: True
   generator: True
-  obs_input_type: [scene_video_with_segmentation_v0,
-                   scene_graph,
-                   box, normalized_abs_box, veh_speed]
+  obs_input_type: [scene_video_with_segmentation_v0, scene_graph, box, veh_speed]
   frameworks:
     pytorch: True
     hugging_faces: True
     multi-gpu: False
   process_input_features:
     enabled: True
-    indexes_to_stack: [2, 3, 4]
+    indexes_to_stack: [2, 3]
     static_features_indexes: []
 exp_opts:
-  datasets: [pie]
+  datasets: [jaad_all]
   batch_size: [16]
   epochs: [20]
   lr: [5.0e-06]

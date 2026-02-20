@@ -76,6 +76,7 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
                                                class_w=class_w,
                                                dataset_statistics=dataset_statistics,
                                                dataset_name=kwargs["model_opts"]["dataset_full"],
+                                               model_opts=kwargs["model_opts"],
                                                submodels_paths=submodels_paths)
         summary(model)
 
@@ -83,7 +84,7 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
         train_dataset, val_dataset, val_transforms_dicts = get_timeseries_datasets(
             data_train, data_val, model, generator, None,
             get_image_transform=True, img_model_config=None,
-            get_seg_maps_transforms = False if kwargs["model_opts"].get("skip_seg_maps_transforms") else True,
+            get_seg_maps_transforms = False, # if kwargs["model_opts"].get("skip_seg_maps_transforms") else True,
             dataset_statistics=dataset_statistics)
 
         warmup_ratio = 0.1
@@ -218,6 +219,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
                  class_w: list = None,
                  dataset_statistics: dict = None,
                  dataset_name: str = "",
+                 model_opts: dict = None,
                  submodels_paths: dict = None
         ):
         super().__init__(config_for_huggingface)
@@ -243,6 +245,7 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
         self.van_sequential = load_pretrained_vam_branch(
             dataset_name,
             add_classification_head=False,
+            model_opts=model_opts,
             submodels_paths=submodels_paths)
 
         # Get pretrained encoder transformer (at the end of VAM branch)
@@ -357,29 +360,83 @@ class TrajFusionNetForClassification(TimeSeriesTransformerPreTrainedModel):
 def train_submodels(dataset: str,
                     submodels_paths: dict):
 
-    # SAM module ===============================================================
     
-    # Train encoder transformer
-    enc_tf_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformerb.yaml", 
-         "-d", dataset, "-j", submodels_paths['traj_tf_path']])
+    # GAM branch ===============================================================
 
-    # VAM module ===============================================================
+    # Train encoder transformer
+    #gam_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/GAMBranch.yaml", 
+    #     "-d", dataset]
+    #)
+    #TODO! remove
+    gam_branch_path = "data/models/jaad_all/GAMBranch/16Feb2026-10h55m31s/"
+    submodels_paths['gam_branch_path'] = gam_branch_path
+
+    # SAM branch ===============================================================
     
-    # Train VAN with image context at time t and predicted trajectory overlays
-    van_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
-         "-d", dataset, "-j", submodels_paths['traj_tf_path']])
+    # Train encoder transformer in SAM branch
+    #sam_branch_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/SAMBranch.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #TODO! remove
+    sam_branch_path = "data/models/jaad_all/SAMBranch/16Feb2026-13h11m26s/"
+    submodels_paths['sam_branch_path'] = sam_branch_path
+
+    # VAM branch ===============================================================
     
-    # Train VAN with image context at time t-15 and observed trajectory overlays
-    van_prev_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAN_previous.yaml", 
-         "-d", dataset, "-j", submodels_paths['traj_tf_path']])
+    # Train VAN with image context at time t-15 with trajectory overlays
+    #submodels_paths['static_img_index'] = -15
+    #van_min15_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #TODO! remove
+    van_min15_path = "data/models/jaad_all/VAN/16Feb2026-15h38m06s/"
+    submodels_paths['van_min15_path'] = van_min15_path
+
+    # Train VAN with image context at time t-10 with trajectory overlays
+    #submodels_paths['static_img_index'] = -10
+    #van_min10_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #TODO! remove
+    van_min10_path = "data/models/jaad_all/VAN/16Feb2026-16h42m59s"
+    submodels_paths['van_min10_path'] = van_min10_path
+
+    # Train VAN with image context at time t-5 with trajectory overlays
+    #submodels_paths['static_img_index'] = -5
+    #van_min5_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #TODO! remove
+    van_min5_path = "data/models/jaad_all/VAN/16Feb2026-17h37m53s"
+    submodels_paths['van_min5_path'] = van_min5_path
+
+    # Train VAN with image context at time t with trajectory overlays
+    #submodels_paths['static_img_index'] = -1
+    #van_0_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #TODO! remove
+    van_0_path = "data/models/jaad_all/VAN/17Feb2026-17h48m16s"
+    submodels_paths['van_0_path'] = van_0_path
+    
+    # Train encoder transformer in VAM branch
+    submodels_paths['static_img_index'] = None
+    #vam_branch_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAMBranch.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #TODO! remove
+    vam_branch_path = "data/models/jaad_all/VAMBranch/17Feb2026-22h10m48s"
+    submodels_paths['vam_branch_path'] = vam_branch_path
     
     submodels_paths.update({
-        "enc_tf_path": enc_tf_path,
-        "van_path": van_path,
-        "van_prev_path": van_prev_path
+        "gam_branch_path": gam_branch_path,
+        "sam_branch_path": sam_branch_path,
+        "vam_branch_path": vam_branch_path,
+        "van_min15_path": van_min15_path,
+        "van_min10_path": van_min10_path,
+        "van_min5_path": van_min5_path,
+        "van_0_path": van_0_path
     })
 
     return submodels_paths

@@ -238,11 +238,11 @@ class TrajectoryTransformerModel(TimeSeriesTransformerPreTrainedModel):
 
 def load_pretrained_trajectory_tf_only_speed(dataset_name: str,
                                              submodels_paths=None,
-                                             traj_model_path_override: str = None):
+                                             submodels_paths_override: str = None):
     config_for_trajectory_predictor = get_config_for_timeseries_lib(
         encoder_input_size=1, seq_len=15, hyperparams={}, pred_len=60)
-    if traj_model_path_override:
-        checkpoint = traj_model_path_override
+    if submodels_paths_override:
+        checkpoint = submodels_paths_override
     elif submodels_paths:
         checkpoint = submodels_paths["traj_tf_path"]
     else:

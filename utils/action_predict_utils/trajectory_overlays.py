@@ -19,7 +19,7 @@ class TrajectoryOverlays(metaclass=Singleton):
 
         self._dataset = model_opts["dataset_full"]
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        traj_model_path_override = model_opts.get("traj_model_path_override")
+        submodels_paths_override = model_opts.get("submodels_paths_override")
 
         # Get dataset statistics
         self.dataset_statistics = {
@@ -45,8 +45,8 @@ class TrajectoryOverlays(metaclass=Singleton):
         # Get pretrained trajectory predictor -------------------------------------------
         config_for_trajectory_predictor = get_config_for_trajectory_pred(
             encoder_input_size=5, seq_len=15, hyperparams={}, pred_len=60)
-        if traj_model_path_override:
-            checkpoint = traj_model_path_override
+        if submodels_paths_override:
+            checkpoint = submodels_paths_override
         elif submodels_paths:
             checkpoint = submodels_paths["traj_tf_path"]
         else:

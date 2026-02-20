@@ -12,6 +12,7 @@ from transformers import VanConfig, VanModel, VanPreTrainedModel
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndNoAttention
 
 from models.hugging_face.image_utils import test_image_based_model, HuggingFaceImageClassificationModel, TorchImageDataset
+from models.hugging_face.utils.trainer_callbacks import IgnoreEarlyBestModelCallback
 from models.hugging_face.utilities import compute_loss, get_class_labels_info, get_device
 from utils.data_load import DataGenerator
 
@@ -108,7 +109,8 @@ class VAN(HuggingFaceImageClassificationModel):
             eval_dataset=val_dataset,
             tokenizer=image_processor,
             compute_metrics=self.compute_metrics,
-            data_collator=self.collate_fn
+            data_collator=self.collate_fn,
+            callbacks=[IgnoreEarlyBestModelCallback(min_epoch=3)]
         )
 
         # Train model
@@ -265,6 +267,7 @@ def load_pretrained_van(dataset_name: str,
             checkpoint2 = checkpoint1
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
+            checkpoint1 = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/17Feb2026-19h18m17s/checkpoint-1617" # TODO! remove
             checkpoint2 = checkpoint1
 
         elif dataset_name == "jaad_beh":

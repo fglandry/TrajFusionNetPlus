@@ -233,11 +233,11 @@ class TrajectoryTransformerModel(TimeSeriesTransformerPreTrainedModel):
 
 def load_pretrained_trajectory_transformer(dataset_name: str,
                                            submodels_paths=None,
-                                           traj_model_path_override: str = None):
+                                           submodels_paths_override: str = None):
     config_for_trajectory_predictor = get_config_for_timeseries_lib(
         encoder_input_size=5, seq_len=15, hyperparams={}, pred_len=60)
-    if traj_model_path_override:
-        checkpoint = traj_model_path_override
+    if submodels_paths_override:
+        checkpoint = submodels_paths_override["traj_tf_path"]
     elif submodels_paths:
         checkpoint = submodels_paths["traj_tf_path"]
     else:
@@ -245,6 +245,8 @@ def load_pretrained_trajectory_transformer(dataset_name: str,
             checkpoint = "data/models/pie/TrajectoryTransformer/weights_trajectorytransformer_pie"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
+            # TODO! remove
+            #checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajectoryTransformer/15Feb2026-19h12m39s"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
 

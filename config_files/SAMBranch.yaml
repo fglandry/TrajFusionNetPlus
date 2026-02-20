@@ -2,10 +2,7 @@ model_opts:
   model: SAMBranch
   apply_class_weights: True
   generator: True
-  obs_input_type: [ # scene_video_with_segmentation_v0,
-                    # scene_video_with_ped_overlays_combined,
-                   scene_graph,
-                   box, speed]
+  obs_input_type: [scene_graph, box, veh_speed]
   frameworks:
     pytorch: True
     hugging_faces: True
