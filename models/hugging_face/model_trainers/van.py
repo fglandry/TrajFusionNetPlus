@@ -267,7 +267,7 @@ def load_pretrained_van(dataset_name: str,
             checkpoint2 = checkpoint1
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
-            checkpoint1 = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/17Feb2026-19h18m17s/checkpoint-1617" # TODO! remove
+            #checkpoint1 = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/17Feb2026-19h18m17s/checkpoint-1617" # TODO! remove
             checkpoint2 = checkpoint1
 
         elif dataset_name == "jaad_beh":
