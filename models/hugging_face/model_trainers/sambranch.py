@@ -356,9 +356,6 @@ def load_pretrained_sam_branch(dataset_name: str,
     else:
         if dataset_name in ["pie", "combined"]:
             checkpoint = "data/models/pie/SAMBranch/weights_sambranch_pie"
-            #TODO! remove
-            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/pie/SAMBranch/21Feb2026-10h12m49s/checkpoint-9552"
-            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/pie/SAMBranch/21Feb2026-15h52m33s/checkpoint-5970"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/SAMBranch/weights_sambranch_jaadall"
         elif dataset_name == "jaad_beh":
