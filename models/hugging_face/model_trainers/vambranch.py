@@ -50,7 +50,7 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
             test_only [bool]: is set to True, model will not be trained, only tested
         """
         
-        print("Starting model loading for model Trajectory Transformer Classifier ======================")
+        print("Starting model loading for model VAM Branch (Visual Attention Module) ======================")
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][0]
@@ -123,7 +123,7 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
 
         # Train model
         if not test_only:
-            print("Starting training of model Trajectory Transformer Classifier ===========================")
+            print("Starting training of model VAM Branch (Visual Attention Module) ===========================")
             trainer.train()
 
         return {

@@ -45,7 +45,7 @@ class GAMBranch(HuggingFaceTimeSeriesModel):
             test_only [bool]: is set to True, model will not be trained, only tested
         """
         
-        print("Starting model loading for model GAMBranch ======================")
+        print("Starting model loading for model GAM Branch (Graph Attention Module) ======================")
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][0]
@@ -122,7 +122,7 @@ class GAMBranch(HuggingFaceTimeSeriesModel):
 
         # Train model
         if not test_only:
-            print("Starting training of model Trajectory Transformer Classifier ===========================")
+            print("Starting training of model GAM Branch (Graph Attention Module) ===========================")
             trainer.train()
 
         return {
@@ -424,6 +424,8 @@ def load_pretrained_gam_branch(dataset_name: str,
             checkpoint = "data/models/combined/GAMBranch/09Apr2025-16h37m56s_CO9"
         if dataset_name in "pie":
             checkpoint = "data/models/pie/GAMBranch/weights_gambranch_pie"
+            #TODO! remove
+            checkpoint = "data/models/pie/GAMBranch/20Feb2026-22h27m29s"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/GAMBranch/weights_gambranch_jaadall"
 

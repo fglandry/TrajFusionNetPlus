@@ -15,6 +15,7 @@ from models.hugging_face.model_trainers.trajectorytransformer import load_pretra
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
+from models.hugging_face.utils.trainer_callbacks import IgnoreEarlyBestModelCallback
 from utils.data_load import DataGenerator
 
 PRED_LEN = 60
@@ -46,7 +47,7 @@ class SAMBranch(HuggingFaceTimeSeriesModel):
             test_only [bool]: is set to True, model will not be trained, only tested
         """
         
-        print("Starting model loading for model Trajectory Transformer Classifier ======================")
+        print("Starting model loading for model SAM Branch (Sequential Attention Module) ======================")
         self.class_w = class_w
 
         # Get parameters to be used by TSLib library
@@ -113,12 +114,13 @@ class SAMBranch(HuggingFaceTimeSeriesModel):
             eval_dataset=val_dataset,
             tokenizer=None,
             compute_metrics=self.compute_metrics,
-            data_collator=self.collate_fn
+            data_collator=self.collate_fn,
+            callbacks=[IgnoreEarlyBestModelCallback(min_epoch=5)]
         )
 
         # Train model
         if not test_only:
-            print("Starting training of model Trajectory Transformer Classifier ===========================")
+            print("Starting training of model SAM Branch (Sequential Attention Module) ===========================")
             trainer.train()
 
         return {
@@ -354,6 +356,9 @@ def load_pretrained_sam_branch(dataset_name: str,
     else:
         if dataset_name in ["pie", "combined"]:
             checkpoint = "data/models/pie/SAMBranch/weights_sambranch_pie"
+            #TODO! remove
+            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/pie/SAMBranch/21Feb2026-10h12m49s/checkpoint-9552"
+            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/pie/SAMBranch/21Feb2026-15h52m33s/checkpoint-5970"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/SAMBranch/weights_sambranch_jaadall"
         elif dataset_name == "jaad_beh":
