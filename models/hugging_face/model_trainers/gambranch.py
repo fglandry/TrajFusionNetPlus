@@ -426,7 +426,6 @@ def load_pretrained_gam_branch(dataset_name: str,
             checkpoint = "data/models/pie/GAMBranch/weights_gambranch_pie"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/GAMBranch/weights_gambranch_jaadall"
-
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 
