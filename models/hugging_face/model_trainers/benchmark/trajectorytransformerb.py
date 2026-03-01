@@ -227,18 +227,18 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
 
         self.traj_TF = load_pretrained_trajectory_transformer(dataset_name,
                                                               submodels_paths=submodels_paths,
-                                                              traj_model_path_override=model_opts.get("traj_model_path_override"))
+                                                              submodels_paths_override=model_opts.get("submodels_paths_override"))
         """
         self.traj_tf_speed = load_pretrained_trajectory_tf_only_speed(
             dataset_name,
             submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
+            submodels_paths_override=model_opts.get("submodels_paths_override")
         )
 
         self.traj_tf_box = load_pretrained_trajectory_tf_box(
             dataset_name,
             submodels_paths=submodels_paths,
-            traj_model_path_override=model_opts.get("traj_model_path_override")
+            submodels_paths_override=model_opts.get("submodels_paths_override")
         )
         """
 

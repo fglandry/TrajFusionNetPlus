@@ -231,6 +231,7 @@ class TorchTimeseriesDataset(Dataset):
                 self.previous_context_image = "scene_context" in self.data.input_type_list[3]
             if "scene_video" in self.data.input_type_list[1]:
                 self.video_sequential_context = True
+                self.model_type = "TrajFusionNetPlus"
             if len(self.data.input_type_list) > 4 and "with_segmentation" in self.data.input_type_list[4]:
                 self.video_sequential_segmentation = True
                 #self.video_sequential_segmentation = False
@@ -409,7 +410,7 @@ class TorchTimeseriesDataset(Dataset):
         # todo: assuming the third/fourth item in list corresponds to the timeseries context data
         obs_input_type_index = 2
         if self.video_sequential_context: # 'scene_graph'
-            if self.video_sequential_segmentation:
+            if self.video_sequential_segmentation or self.model_type == "TrajFusionNetPlus":
                 obs_input_type_index = 2
             else:
                 obs_input_type_index = 1

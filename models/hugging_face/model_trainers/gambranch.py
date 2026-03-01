@@ -20,7 +20,7 @@ NET_INNER_DIM = 512
 DROPOUT = 0.1
 
 
-class GraphTransformer(HuggingFaceTimeSeriesModel):
+class GAMBranch(HuggingFaceTimeSeriesModel):
 
     def train(self,
               data_train: dict,  
@@ -45,7 +45,7 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
             test_only [bool]: is set to True, model will not be trained, only tested
         """
         
-        print("Starting model loading for model Trajectory Transformer Classifier ======================")
+        print("Starting model loading for model GAM Branch (Graph Attention Module) ======================")
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][0]
@@ -61,9 +61,9 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
 
         # Parameters for context transformer
         timeseries_element = data_train['data'][0][0][0][-1]
-        timeseries_context_element = data_train['data'][0][0][0][2]
+        #timeseries_context_element = data_train['data'][0][0][0][2]
         encoder_input_size = timeseries_element.shape[-1]
-        context_len = 15 # timeseries_context_element.shape[-2]
+        context_len = 15
         seq_len = 15
         config_for_context_timeseries = get_config_for_context_timeseries(
             encoder_input_size, context_len, hyperparams)
@@ -122,7 +122,7 @@ class GraphTransformer(HuggingFaceTimeSeriesModel):
 
         # Train model
         if not test_only:
-            print("Starting training of model Trajectory Transformer Classifier ===========================")
+            print("Starting training of model GAM Branch (Graph Attention Module) ===========================")
             trainer.train()
 
         return {
@@ -406,16 +406,19 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
         return trajectory_values
 
 def load_pretrained_gam_branch(dataset_name: str,
-                                        add_classification_head: bool = True,
-                                        submodels_paths: dict = None):
+                               add_classification_head: bool = True,
+                               submodels_paths: dict = None,
+                               submodels_paths_override: str = None):
     config_for_encoder_tf = get_config_for_timeseries_lib(
             encoder_input_size=512-1, seq_len=15, hyperparams={})
     
     config_for_context_timeseries = get_config_for_context_timeseries(
         encoder_input_size=512-1, seq_len=15, hyperparams={})
 
-    if submodels_paths:
-        checkpoint = submodels_paths["enc_tf_path"]
+    if submodels_paths_override:
+        checkpoint = submodels_paths_override["gam_branch_path"]
+    elif submodels_paths:
+        checkpoint = submodels_paths["gam_branch_path"]
     else:
         if dataset_name == "combined":
             checkpoint = "data/models/combined/GAMBranch/09Apr2025-16h37m56s_CO9"
@@ -423,7 +426,6 @@ def load_pretrained_gam_branch(dataset_name: str,
             checkpoint = "data/models/pie/GAMBranch/weights_gambranch_pie"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/GAMBranch/weights_gambranch_jaadall"
-
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

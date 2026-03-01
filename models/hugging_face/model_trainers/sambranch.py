@@ -15,6 +15,7 @@ from models.hugging_face.model_trainers.trajectorytransformer import load_pretra
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
+from models.hugging_face.utils.trainer_callbacks import IgnoreEarlyBestModelCallback
 from utils.data_load import DataGenerator
 
 PRED_LEN = 60
@@ -46,11 +47,10 @@ class SAMBranch(HuggingFaceTimeSeriesModel):
             test_only [bool]: is set to True, model will not be trained, only tested
         """
         
-        print("Starting model loading for model Trajectory Transformer Classifier ======================")
+        print("Starting model loading for model SAM Branch (Sequential Attention Module) ======================")
         self.class_w = class_w
 
         # Get parameters to be used by TSLib library
-        data_element = data_train['data'][0][0][0][0]
         encoder_input_size = 19 # data_element.shape[-1]
         seq_len = 75 # data_element.shape[-2] + PRED_LEN # 75
         
@@ -114,12 +114,13 @@ class SAMBranch(HuggingFaceTimeSeriesModel):
             eval_dataset=val_dataset,
             tokenizer=None,
             compute_metrics=self.compute_metrics,
-            data_collator=self.collate_fn
+            data_collator=self.collate_fn,
+            callbacks=[IgnoreEarlyBestModelCallback(min_epoch=5)]
         )
 
         # Train model
         if not test_only:
-            print("Starting training of model Trajectory Transformer Classifier ===========================")
+            print("Starting training of model SAM Branch (Sequential Attention Module) ===========================")
             trainer.train()
 
         return {
@@ -253,12 +254,13 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
 
         self.traj_TF = load_pretrained_trajectory_transformer(dataset_name,
                                                               submodels_paths=submodels_paths,
-                                                              traj_model_path_override=model_opts.get("traj_model_path_override"))
+                                                              submodels_paths_override=model_opts.get("submodels_paths_override"))
 
         self.graph_tf = load_pretrained_gam_branch(
             dataset_name,
             add_classification_head=False,
-            #submodels_paths=submodels_paths
+            submodels_paths=submodels_paths,
+            submodels_paths_override=model_opts.get("submodels_paths_override")
         )
 
         self.graph_enc = nn.Linear(512, 14)
@@ -350,7 +352,7 @@ def load_pretrained_sam_branch(dataset_name: str,
     config_for_encoder_tf = get_config_for_timeseries_lib(
             encoder_input_size=19, seq_len=75, hyperparams={})
     if submodels_paths:
-        checkpoint = submodels_paths["enc_tf_path"]
+        checkpoint = submodels_paths["sam_branch_path"]
     else:
         if dataset_name in ["pie", "combined"]:
             checkpoint = "data/models/pie/SAMBranch/weights_sambranch_pie"

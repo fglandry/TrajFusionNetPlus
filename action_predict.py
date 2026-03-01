@@ -1586,7 +1586,7 @@ class ActionPredict(object):
             traj_tf_path = run_and_capture_model_path(
                 ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
                 "-d", dataset, "-s", "trajectory"])
-        
+
         submodels_paths = {
             "traj_tf_path": traj_tf_path
         }

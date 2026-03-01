@@ -253,7 +253,7 @@ class EncoderTransformer(TimeSeriesTransformerPreTrainedModel):
 
         self.traj_TF = load_pretrained_trajectory_transformer(dataset_name,
                                                               submodels_paths=submodels_paths,
-                                                              traj_model_path_override=model_opts.get("traj_model_path_override"))
+                                                              submodels_paths_override=model_opts.get("submodels_paths_override"))
         
         self.graph_tf = load_pretrained_graph_transformer(
             dataset_name,

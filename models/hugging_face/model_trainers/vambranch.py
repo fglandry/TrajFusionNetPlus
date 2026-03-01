@@ -50,7 +50,7 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
             test_only [bool]: is set to True, model will not be trained, only tested
         """
         
-        print("Starting model loading for model Trajectory Transformer Classifier ======================")
+        print("Starting model loading for model VAM Branch (Visual Attention Module) ======================")
 
         # Get parameters to be used by TSLib library
         data_element = data_train['data'][0][0][0][0]
@@ -66,14 +66,10 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
 
         # Parameters for context transformer
         timeseries_element = data_train['data'][0][0][0][-1]
-        #timeseries_context_element = data_train['data'][0][0][0][2]
         encoder_input_size = timeseries_element.shape[-1]
-        context_len = 15 # timeseries_context_element.shape[-2]
-        seq_len = 4 # 15
-        #config_for_context_timeseries = get_config_for_context_timeseries(
-        #    encoder_input_size, context_len, hyperparams)
-        
-        encoder_input_size = 512-1 # 1024-1 # 512-1
+        seq_len = 4
+
+        encoder_input_size = 512-1
         config_for_timeseries_lib = get_config_for_timeseries_lib(
             encoder_input_size, seq_len, hyperparams)
         config_for_huggingface = TimeSeriesTransformerConfig()
@@ -91,7 +87,7 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
         train_dataset, val_dataset, val_transforms_dicts = get_timeseries_datasets(
             data_train, data_val, model, generator, None,
             get_image_transform=True, img_model_config=None,
-            get_seg_maps_transforms=True,
+            #get_seg_maps_transforms=True,
             dataset_statistics=dataset_statistics)
 
         args = TrainingArguments(
@@ -127,7 +123,7 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
 
         # Train model
         if not test_only:
-            print("Starting training of model Trajectory Transformer Classifier ===========================")
+            print("Starting training of model VAM Branch (Visual Attention Module) ===========================")
             trainer.train()
 
         return {
@@ -183,7 +179,7 @@ class VANEncoderTransformerForClassification(TimeSeriesTransformerPreTrainedMode
         self.van_sequential_tf = VANEncoderTransformer(
             config_for_huggingface,
             config_for_timeseries_lib,
-            config_for_context_timeseries=config_for_context_timeseries,
+            #config_for_context_timeseries=config_for_context_timeseries,
             dataset_name=dataset_name,
             model_opts=model_opts
         )
@@ -240,29 +236,40 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
                  config_for_huggingface: TimeSeriesTransformerConfig,
                  config_for_timeseries_lib: dict = None,
                  dataset_name: str = None,
+                 model_opts: dict = None,
+                 submodels_paths: dict = None,
+                 *args, **kwargs
         ):
         super().__init__(config_for_huggingface, config_for_timeseries_lib)
         self._device = get_device()
         self.num_labels = config_for_huggingface.num_labels
         self.timeseries_config = config_for_timeseries_lib
 
-        
         # Get pretrained VAN Models -------------------------------------------
-        if dataset_name == "jaad_all":
-            van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaadall"
-            van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaadall"
-            van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaadall"
-            van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaadall"
-        elif dataset_name == "pie":
-            van_min15_path = "data/models/pie/VAN/weights_van_min15_pie"
-            van_min10_path = "data/models/pie/VAN/weights_van_min10_pie"
-            van_min5_path = "data/models/pie/VAN/weights_van_min5_pie"
-            van_0_path = "data/models/pie/VAN/weights_van_0_pie"
-        elif dataset_name == "combined":
-            van_min15_path = "data/models/combined/VAN/06Jun2025-21h23m59s_CO7a"
-            van_min10_path = "data/models/combined/VAN/07Jun2025-11h10m06s_CO7b"
-            van_min5_path = "data/models/combined/VAN/07Jun2025-17h07m55s_CO7c"
-            van_0_path = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7"
+        submodels_paths_override = model_opts.get("submodels_paths_override") if model_opts else None
+        submodels_paths = submodels_paths_override if submodels_paths_override else submodels_paths
+
+        if submodels_paths:
+            van_min15_path = submodels_paths["van_min15_path"]
+            van_min10_path = submodels_paths["van_min10_path"]
+            van_min5_path = submodels_paths["van_min5_path"]
+            van_0_path = submodels_paths["van_0_path"]
+        else:
+            if dataset_name == "jaad_all":
+                van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaadall"
+                van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaadall"
+                van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaadall"
+                van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaadall"
+            elif dataset_name == "pie":
+                van_min15_path = "data/models/pie/VAN/weights_van_min15_pie"
+                van_min10_path = "data/models/pie/VAN/weights_van_min10_pie"
+                van_min5_path = "data/models/pie/VAN/weights_van_min5_pie"
+                van_0_path = "data/models/pie/VAN/weights_van_0_pie"
+            elif dataset_name == "combined":
+                van_min15_path = "data/models/combined/VAN/06Jun2025-21h23m59s_CO7a"
+                van_min10_path = "data/models/combined/VAN/07Jun2025-11h10m06s_CO7b"
+                van_min5_path = "data/models/combined/VAN/07Jun2025-17h07m55s_CO7c"
+                van_0_path = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7"
 
         self.van_min15 = load_pretrained_van(dataset_name, is_predicted_overlays=True,
             add_classification_head=False,
@@ -338,14 +345,15 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
 
 
 def load_pretrained_vam_branch(dataset_name: str,
-                                   add_classification_head: bool = True,
-                                   submodels_paths: dict = None):
+                               add_classification_head: bool = True,
+                               model_opts: dict = None,
+                               submodels_paths: dict = None):
 
     config_for_encoder_tf = get_config_for_timeseries_lib(
             encoder_input_size=512-1, seq_len=4, hyperparams={})
     
     if submodels_paths:
-        checkpoint = submodels_paths["enc_tf_path"]
+        checkpoint = submodels_paths["vam_branch_path"]
     else:
         if dataset_name == "combined":
             checkpoint = "data/models/combined/VAMBranch/13Jun2025-20h24m35s_C15/checkpoint-10850"
@@ -368,7 +376,8 @@ def load_pretrained_vam_branch(dataset_name: str,
             config_for_timeseries_lib=config_for_encoder_tf,
             ignore_mismatched_sizes=True,
             dataset_name=dataset_name,
-            #submodels_paths=submodels_paths)
+            model_opts=model_opts,
+            submodels_paths=submodels_paths
         )
     
     # Make all layers untrainable

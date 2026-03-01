@@ -72,7 +72,7 @@ def combine_beh_seq(beh_seq_jaad, beh_seq_pie):
 
 def compute_sequences(d: dict, data_raw: dict, opts: dict, 
                       obs_length: int, time_to_event: list, olap_res: int,
-                      add_normalized_abs_box: bool = True, 
+                      add_normalized_abs_box: bool = False, 
                       add_box_center_speed: bool = False,
                       action_predict_obj_ref = None):
     """ Compute sequences (t=16) from pedestrian tracks
@@ -106,8 +106,8 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
         for seq_idx, seq in enumerate(d[k]):
             if opts.get("seq_type")=="trajectory":
                 TRAJECTORY_PREDICTION_LENGTH = 60
+                start_idx = 0 # start_idx = end_idx - 60 if (end_idx - 60) >= 0 else 0
                 end_idx = len(seq) - obs_length - TRAJECTORY_PREDICTION_LENGTH
-                start_idx = end_idx - 60 if (end_idx - 60) >= 0 else 0 # TODO: change back
                 seqs.extend([seq[i:i + obs_length] for i in
                                 range(start_idx, end_idx + 1, olap_res)])
                 if k == "box_org":
@@ -126,8 +126,9 @@ def compute_sequences(d: dict, data_raw: dict, opts: dict,
                         combined_seq = [s + speed_seq[idx] for idx, s in enumerate(seq)]
 
                     # Get trajectory following observation length
+                    start_idx = 0 # start_idx = end_idx - 60 if (end_idx - 60) >= 0 else 0
                     end_idx = len(seq) - obs_length - TRAJECTORY_PREDICTION_LENGTH
-                    start_idx = end_idx - 60 if (end_idx - 60) >= 0 else 0
+                    
                     trajectories.extend([combined_seq[i+obs_length-1:i+obs_length+TRAJECTORY_PREDICTION_LENGTH] \
                                         for i in range(start_idx, end_idx + 1, olap_res)])
                     img_seq = d["img_org"][seq_idx]

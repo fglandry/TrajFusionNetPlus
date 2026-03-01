@@ -12,6 +12,7 @@ from transformers import VanConfig, VanModel, VanPreTrainedModel
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndNoAttention
 
 from models.hugging_face.image_utils import test_image_based_model, HuggingFaceImageClassificationModel, TorchImageDataset
+from models.hugging_face.utils.trainer_callbacks import IgnoreEarlyBestModelCallback
 from models.hugging_face.utilities import compute_loss, get_class_labels_info, get_device
 from utils.data_load import DataGenerator
 
@@ -108,7 +109,8 @@ class VAN(HuggingFaceImageClassificationModel):
             eval_dataset=val_dataset,
             tokenizer=image_processor,
             compute_metrics=self.compute_metrics,
-            data_collator=self.collate_fn
+            data_collator=self.collate_fn,
+            callbacks=[IgnoreEarlyBestModelCallback(min_epoch=3)]
         )
 
         # Train model

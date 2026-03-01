@@ -240,6 +240,8 @@ def get_static_context_data(self,
     static_index = -1
     if get_first_static_feature_instead_of_last:
         static_index = 0
+    if model_opts.get("submodels_paths_override"):
+        static_index = model_opts["submodels_paths_override"].get("static_img_index", static_index)
 
     # Keep latest element in sequence (model will be run on one frame)
     full_bbox_sequences = None
