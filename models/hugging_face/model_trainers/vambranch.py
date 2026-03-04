@@ -149,7 +149,7 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
             generator [bool]: if set to true, input data is provided in a generator
         """
         
-        print("Starting inference using trained model Trajectory Transformer Classifier ===========================")
+        print("Starting inference using trained model VAM Branch ===========================")
 
         if test_only:
             pretrained_model = load_pretrained_vam_branch(dataset_name)

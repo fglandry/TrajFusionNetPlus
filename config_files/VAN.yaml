@@ -14,4 +14,4 @@ exp_opts:
   datasets: [pie]
   batch_size: [16]
   epochs: [15]
-  lr: [1.0e-04]
+  lr: [0.0001]

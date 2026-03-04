@@ -1073,7 +1073,8 @@ class ActionPredict(object):
                                     data_type=data_type,
                                     get_previous_scene_graph=True)
             elif "scene_video" in d_type:
-                features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type)
+                features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type,
+                                                             submodels_paths=submodels_paths)
             elif 'pose' in d_type:
                 path_to_pose, _ = get_path(save_folder='poses',
                                            dataset=model_opts['dataset'],
@@ -1583,9 +1584,11 @@ class ActionPredict(object):
                 ["python3", "train_test.py", "-c", "config_files/SmallTrajectoryTransformer.yaml", 
                 "-d", dataset, "-s", "trajectory"])
         else:
-            traj_tf_path = run_and_capture_model_path(
-                ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
-                "-d", dataset, "-s", "trajectory"])
+            #traj_tf_path = run_and_capture_model_path(
+            #    ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
+            #    "-d", dataset, "-s", "trajectory"])
+            #TODO! remove
+            traj_tf_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/pie/TrajectoryTransformer/28Feb2026-19h13m39s"
 
         submodels_paths = {
             "traj_tf_path": traj_tf_path

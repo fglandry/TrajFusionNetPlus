@@ -72,7 +72,7 @@ def combine_beh_seq(beh_seq_jaad, beh_seq_pie):
 
 def compute_sequences(d: dict, data_raw: dict, opts: dict, 
                       obs_length: int, time_to_event: list, olap_res: int,
-                      add_normalized_abs_box: bool = False, 
+                      add_normalized_abs_box: bool = True, 
                       add_box_center_speed: bool = False,
                       action_predict_obj_ref = None):
     """ Compute sequences (t=16) from pedestrian tracks
