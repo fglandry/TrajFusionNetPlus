@@ -242,7 +242,7 @@ def load_pretrained_trajectory_transformer(dataset_name: str,
         checkpoint = submodels_paths["traj_tf_path"]
     else:
         if dataset_name in ["pie", "combined"]:
-            checkpoint = "data/models/pie/TrajectoryTransformer/weights_trajectorytransformer_pie"
+            checkpoint = "_data/models/pie/TrajectoryTransformer/weights_trajectorytransformer_pie"
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
         elif dataset_name == "jaad_beh":
