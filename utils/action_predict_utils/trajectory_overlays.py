@@ -46,7 +46,7 @@ class TrajectoryOverlays(metaclass=Singleton):
         config_for_trajectory_predictor = get_config_for_trajectory_pred(
             encoder_input_size=5, seq_len=15, hyperparams={}, pred_len=60)
         if submodels_paths_override:
-            checkpoint = submodels_paths_override
+            checkpoint = submodels_paths_override["traj_tf_path"]
         elif submodels_paths:
             checkpoint = submodels_paths["traj_tf_path"]
         else:

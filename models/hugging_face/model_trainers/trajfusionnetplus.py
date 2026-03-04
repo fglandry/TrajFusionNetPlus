@@ -133,7 +133,7 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
         best_trainer = None
         half_epochs = round(epochs / 2)
         
-        # Run training with the VAM branch disabled for 15 epochs in order to improve learning in 
+        # Run training with the VAM branch disabled for 15 epochs in order to warmup learning in 
         # the SAM branch.
         # In order to do this, the weights in the VAM projection layer ('van_output_embed')
         # as well as the associated learning rate are set to zero.
@@ -148,7 +148,8 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
             args_epoch = copy.deepcopy(args)
             args_epoch.output_dir = epoch_output_dir
 
-            # Get custom optimizer so that the learning rate can be set to zero in the VAM projection layer
+            # Get custom optimizer so that the learning rate can be set to zero in the VAM 
+            # projection layer (first 15 epochs)
             optimizer, lr_scheduler = get_optimizer(self, model, args_epoch, 
                 train_dataset, val_dataset, data_train, train_opts,
                 disable_vam_branch=True, nb_epochs_disabled=15, epoch_index=i+1)
@@ -163,7 +164,7 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
                 best_trainer = trainer
                 best_metric = trainer.state.best_metric
 
-        # Run second part of training procedure with the VAM branch re-enabled       
+        # Run second part of training procedure with the same trainer/optimizer instance      
         optimizer, lr_scheduler = get_optimizer(self, model, args, 
             train_dataset, val_dataset, data_train, train_opts,
             disable_vam_branch=False) # learning rate of the VAM projection layer is

@@ -1073,7 +1073,8 @@ class ActionPredict(object):
                                     data_type=data_type,
                                     get_previous_scene_graph=True)
             elif "scene_video" in d_type:
-                features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type)
+                features, feat_shape = self.get_context_data(model_opts, data, data_type, d_type,
+                                                             submodels_paths=submodels_paths)
             elif 'pose' in d_type:
                 path_to_pose, _ = get_path(save_folder='poses',
                                            dataset=model_opts['dataset'],
