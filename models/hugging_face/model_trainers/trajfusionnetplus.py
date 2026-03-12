@@ -133,6 +133,7 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
         best_trainer = None
         half_epochs = round(epochs / 2)
         
+        """
         # Run training with the VAM branch disabled for 15 epochs in order to warmup learning in 
         # the SAM branch.
         # In order to do this, the weights in the VAM projection layer ('van_output_embed')
@@ -163,6 +164,7 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
             if trainer.state.best_metric > best_metric:
                 best_trainer = trainer
                 best_metric = trainer.state.best_metric
+        """
 
         # Run second part of training procedure with the same trainer/optimizer instance      
         optimizer, lr_scheduler = get_optimizer(self, model, args, 
@@ -371,55 +373,66 @@ def train_submodels(dataset: str,
     # GAM branch ===============================================================
 
     # Train encoder transformer
-    gam_branch_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/GAMBranch.yaml", 
-         "-d", dataset]
-    )
+    #gam_branch_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/GAMBranch.yaml", 
+    #     "-d", dataset]
+    #)
+    gam_branch_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/GAMBranch/04Mar2026-17h47m50s"
     submodels_paths['gam_branch_path'] = gam_branch_path
 
     # SAM branch ===============================================================
     
     # Train encoder transformer in SAM branch
-    sam_branch_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/SAMBranch.yaml", 
-         "-d", dataset, "-j", submodels_paths])
+    #sam_branch_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/SAMBranch.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    sam_branch_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/SAMBranch/04Mar2026-20h03m03s"
     submodels_paths['sam_branch_path'] = sam_branch_path
 
     # VAM branch ===============================================================
-    
-    # Train VAN with image context at time t-15 with trajectory overlays
-    submodels_paths['static_img_index'] = -15
-    van_min15_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
-         "-d", dataset, "-j", submodels_paths])
-    submodels_paths['van_min15_path'] = van_min15_path
-
-    # Train VAN with image context at time t-10 with trajectory overlays
-    submodels_paths['static_img_index'] = -10
-    van_min10_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
-         "-d", dataset, "-j", submodels_paths])
-    submodels_paths['van_min10_path'] = van_min10_path
-
-    # Train VAN with image context at time t-5 with trajectory overlays
-    submodels_paths['static_img_index'] = -5
-    van_min5_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
-         "-d", dataset, "-j", submodels_paths])
-    submodels_paths['van_min5_path'] = van_min5_path
 
     # Train VAN with image context at time t with trajectory overlays
     submodels_paths['static_img_index'] = -1
-    van_0_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
-         "-d", dataset, "-j", submodels_paths])
+    #van_0_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #van_0_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/07Mar2026-19h54m57s"
+    van_0_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/08Mar2026-18h05m11s"
     submodels_paths['van_0_path'] = van_0_path
+
+    # Train VAN with image context at time t-5 with trajectory overlays
+    submodels_paths['static_img_index'] = -5
+    #van_min5_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #van_min5_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/07Mar2026-18h52m08s"
+    van_min5_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/09Mar2026-20h20m07s"
+    submodels_paths['van_min5_path'] = van_min5_path
+
+    # Train VAN with image context at time t-10 with trajectory overlays
+    submodels_paths['static_img_index'] = -10
+    #van_min10_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    #van_min10_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/07Mar2026-17h49m38s"
+    van_min10_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/09Mar2026-21h17m40s"
+    submodels_paths['van_min10_path'] = van_min10_path
+    
+    # Train VAN with image context at time t-15 with trajectory overlays
+    submodels_paths['static_img_index'] = -15
+    #van_min15_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+    #    "-d", dataset, "-j", submodels_paths])
+    #van_min15_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/07Mar2026-16h51m59s"
+    van_min15_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/08Mar2026-20h06m17s"
+    submodels_paths['van_min15_path'] = van_min15_path
     
     # Train encoder transformer in VAM branch
     submodels_paths['static_img_index'] = None
-    vam_branch_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAMBranch.yaml", 
-         "-d", dataset, "-j", submodels_paths])
+    #vam_branch_path = run_and_capture_model_path(
+    #    ["python3", "train_test.py", "-c", "config_files/VAMBranch.yaml", 
+    #     "-d", dataset, "-j", submodels_paths])
+    vam_branch_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAMBranch/10Mar2026-18h25m00s/checkpoint-4851"
     submodels_paths['vam_branch_path'] = vam_branch_path
     
     submodels_paths.update({
@@ -439,9 +452,11 @@ def load_pretrained_trajfusionnet(dataset_name: str):
         checkpoint = "data/models/pie/TrajFusionNet/weights_trajfusionnet_pie"
         raise Exception()
     if dataset_name == "pie":
-        checkpoint = "_data/models/pie/TrajFusionNetPlus/weights_trajfusionnetplus_pie"
+        checkpoint = "data/models/pie/TrajFusionNetPlus/weights_trajfusionnetplus_pie"
     elif dataset_name == "jaad_all":
-        checkpoint = "data/models/jaad_all/TrajFusionNetPlus/weights_trajfusionnetplus_jaadall"
+        checkpoint = "_data/models/jaad_all/TrajFusionNetPlus/weights_trajfusionnetplus_jaadall"
+        # ! TODO remove
+        checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajFusionNetPlus/10Mar2026-18h23m49s/checkpoint-9693"
     elif dataset_name == "jaad_beh":
         checkpoint = "data/models/jaad_beh/TrajFusionNet/weights_trajfusionnet_jaadbeh"
         

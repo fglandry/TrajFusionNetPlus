@@ -423,9 +423,10 @@ def load_pretrained_gam_branch(dataset_name: str,
         if dataset_name == "combined":
             checkpoint = "data/models/combined/GAMBranch/09Apr2025-16h37m56s_CO9"
         if dataset_name in "pie":
-            checkpoint = "_data/models/pie/GAMBranch/weights_gambranch_pie"
+            checkpoint = "data/models/pie/GAMBranch/weights_gambranch_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/GAMBranch/weights_gambranch_jaadall"
+            checkpoint = "_data/models/jaad_all/GAMBranch/weights_gambranch_jaadall"
+            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/GAMBranch/04Mar2026-17h47m50s"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

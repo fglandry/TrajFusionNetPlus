@@ -185,7 +185,8 @@ def train_test_model(configs: dict, beh_seq_train: dict,
         train_opts=configs['train_opts'],
         hyperparams=hyperparams,
         test_only=test_only,
-        train_end_to_end=train_end_to_end
+        train_end_to_end=train_end_to_end,
+        configs=configs
     )
     
     if free_memory:

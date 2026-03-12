@@ -18,6 +18,7 @@ from models.hugging_face.model_trainers.van import load_pretrained_van
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
+from models.hugging_face.utils.trainer_callbacks import IgnoreEarlyBestModelCallback
 from utils.data_load import DataGenerator
 
 PRED_LEN = 60
@@ -118,7 +119,8 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
             eval_dataset=val_dataset,
             tokenizer=None,
             compute_metrics=self.compute_metrics,
-            data_collator=self.collate_fn
+            data_collator=self.collate_fn,
+            callbacks=[IgnoreEarlyBestModelCallback(min_epoch=3)]
         )
 
         # Train model
@@ -256,15 +258,20 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
             van_0_path = submodels_paths["van_0_path"]
         else:
             if dataset_name == "jaad_all":
-                van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaadall"
-                van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaadall"
-                van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaadall"
-                van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaadall"
+                van_min15_path = "_data/models/jaad_all/VAN/weights_van_min15_jaadall"
+                van_min10_path = "_data/models/jaad_all/VAN/weights_van_min10_jaadall"
+                van_min5_path = "_data/models/jaad_all/VAN/weights_van_min5_jaadall"
+                van_0_path = "_data/models/jaad_all/VAN/weights_van_0_jaadall"
+                # TODO! remove
+                van_min15_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/08Mar2026-20h06m17s"
+                van_min10_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/09Mar2026-21h17m40s"
+                van_min5_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/09Mar2026-20h20m07s"
+                van_0_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/08Mar2026-18h05m11s"
             elif dataset_name == "pie":
-                van_min15_path = "_data/models/pie/VAN/weights_van_min15_pie"
-                van_min10_path = "_data/models/pie/VAN/weights_van_min10_pie"
-                van_min5_path = "_data/models/pie/VAN/weights_van_min5_pie"
-                van_0_path = "_data/models/pie/VAN/weights_van_0_pie"
+                van_min15_path = "data/models/pie/VAN/weights_van_min15_pie"
+                van_min10_path = "data/models/pie/VAN/weights_van_min10_pie"
+                van_min5_path = "data/models/pie/VAN/weights_van_min5_pie"
+                van_0_path = "data/models/pie/VAN/weights_van_0_pie"
             elif dataset_name == "combined":
                 van_min15_path = "data/models/combined/VAN/06Jun2025-21h23m59s_CO7a"
                 van_min10_path = "data/models/combined/VAN/07Jun2025-11h10m06s_CO7b"
@@ -358,9 +365,11 @@ def load_pretrained_vam_branch(dataset_name: str,
         if dataset_name == "combined":
             checkpoint = "data/models/combined/VAMBranch/13Jun2025-20h24m35s_C15/checkpoint-10850"
         if dataset_name in "pie":
-            checkpoint = "_data/models/pie/VAMBranch/weights_vambranch_pie"
+            checkpoint = "data/models/pie/VAMBranch/weights_vambranch_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "data/models/jaad_all/VAMBranch/weights_vambranch_jaadall"
+            checkpoint = "_data/models/jaad_all/VAMBranch/weights_vambranch_jaadall"
+            # TODO! remove
+            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAMBranch/10Mar2026-18h25m00s/checkpoint-4851"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

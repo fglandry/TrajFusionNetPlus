@@ -105,7 +105,7 @@ def get_dataset_statistics(data_train: dict, model_opts: dict,
                                         data_train["data"][1],
                                         dataset_statistics,
                                         model_opts,
-                                        use_precomputed_values=False)
+                                        use_precomputed_values=True)
 
     return dataset_statistics
 
