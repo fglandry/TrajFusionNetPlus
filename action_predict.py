@@ -233,7 +233,7 @@ class ActionPredict(object):
                 # Modify the path depending on crop mode
                 if crop_type == 'none':
                     img_save_filename = img_name
-                elif static_index is not None and static_index != -1:
+                elif static_index is not None:
                     img_save_filename = img_name + '_' + p[0] + '_pos' + str(static_index)
                 else:
                     img_save_filename = img_name + '_' + p[0]
@@ -1600,12 +1600,10 @@ class ActionPredict(object):
                 ["python3", "train_test.py", "-c", "config_files/SmallTrajectoryTransformer.yaml", 
                 "-d", dataset, "-s", "trajectory"])
         else:
-            #traj_tf_path = run_and_capture_model_path(
-            #    ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
-            #    "-d", dataset, "-s", "trajectory"])
-            #traj_tf_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajectoryTransformer/04Mar2026-15h43m58s"
-            #traj_tf_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajectoryTransformer/08Mar2026-08h33m32s"
-            traj_tf_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajectoryTransformer/08Mar2026-17h08m06s_DV"
+            traj_tf_path = run_and_capture_model_path(
+                ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
+                "-d", dataset, "-s", "trajectory"])
+
         submodels_paths = {
             "traj_tf_path": traj_tf_path
         }

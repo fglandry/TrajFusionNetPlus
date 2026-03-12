@@ -54,9 +54,6 @@ class TrajectoryOverlays(metaclass=Singleton):
                 checkpoint = "data/models/pie/TrajectoryTransformer/weights_trajectorytransformer_pie"
             elif self._dataset == "jaad_all":
                 checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
-                # TODO: remove!
-                #checkpoint = "/home/francois/MASTER/TrajFusionNet/data/models/jaad_all/TrajectoryTransformer/08Mar2026-14h01m20s"
-                #checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/__data/models/jaad_all/TrajectoryTransformer/08Mar2026-08h33m32s"
             elif self._dataset == "jaad_beh":
                 checkpoint = "data/models/jaad_beh/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
 

@@ -357,8 +357,7 @@ def load_pretrained_sam_branch(dataset_name: str,
         if dataset_name in ["pie", "combined"]:
             checkpoint = "data/models/pie/SAMBranch/weights_sambranch_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "_data/models/jaad_all/SAMBranch/weights_sambranch_jaadall"
-            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/SAMBranch/04Mar2026-20h03m03s"
+            checkpoint = "data/models/jaad_all/SAMBranch/weights_sambranch_jaadall"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformerb/weights_trajectorytransformerb_jaadbeh"
 

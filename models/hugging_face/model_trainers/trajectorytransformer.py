@@ -244,8 +244,7 @@ def load_pretrained_trajectory_transformer(dataset_name: str,
         if dataset_name in ["pie", "combined"]:
             checkpoint = "data/models/pie/TrajectoryTransformer/weights_trajectorytransformer_pie"
         elif dataset_name == "jaad_all":
-            checkpoint = "_data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
-            checkpoint = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajectoryTransformer/08Mar2026-17h08m06s_DV"
+            checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
         elif dataset_name == "jaad_beh":
             checkpoint = "data/models/jaad_beh/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
 
