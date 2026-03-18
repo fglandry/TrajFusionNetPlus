@@ -239,10 +239,6 @@ class ActionPredict(object):
                     img_save_filename = img_name + '_' + p[0]
                 img_save_path = os.path.join(img_save_folder, img_save_filename + '.pkl')
 
-                #!TODO: remove
-                #img_features = open_pickle_file(img_save_path)
-                #cv2.imwrite(f"/home/francois/MASTER/sem_imgs/{img_name + '_' + p[0] + 'BBb.png'}", img_features)
-                
                 # Check whether the file exists
                 file_already_exists = os.path.exists(img_save_path) and not regen_data
                 if file_already_exists and not concatenate_frames:
@@ -301,8 +297,6 @@ class ActionPredict(object):
                                         img_id=imp,
                                         data_raw=data_raw)
                                 img_features = cv2.resize(img_features, target_dim)
-                                #if feature_type == "scene_context_with_ped_overlays_combined":
-                                #    cv2.imwrite(f"/home/francois/MASTER/sem_imgs/{img_save_filename + 'II.png'}", img_features)
                             else: # ped overlays will be computed later
                                 img_features = img_data.copy()
                             #show_image(img_features) if debug else None
@@ -1600,10 +1594,9 @@ class ActionPredict(object):
                 ["python3", "train_test.py", "-c", "config_files/SmallTrajectoryTransformer.yaml", 
                 "-d", dataset, "-s", "trajectory"])
         else:
-            #traj_tf_path = run_and_capture_model_path(
-            #    ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
-            #    "-d", dataset, "-s", "trajectory"])
-            traj_tf_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajectoryTransformer/11Mar2026-21h31m40s"
+            traj_tf_path = run_and_capture_model_path(
+                ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
+                "-d", dataset, "-s", "trajectory"])
 
         submodels_paths = {
             "traj_tf_path": traj_tf_path

@@ -267,9 +267,6 @@ def load_pretrained_van(dataset_name: str,
             checkpoint2 = checkpoint1
         elif dataset_name == "jaad_all":
             checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
-            #checkpoint1 = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/13Mar2026-21h52m34s/checkpoint-4851"
-            #checkpoint1 = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/13Mar2026-22h55m44s/checkpoint-7007"
-            checkpoint1 = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/VAN/14Mar2026-09h19m53s/checkpoint-4312"
             checkpoint2 = checkpoint1
 
         elif dataset_name == "jaad_beh":
