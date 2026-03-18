@@ -18,6 +18,7 @@ from models.hugging_face.model_trainers.van import load_pretrained_van
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TimeSeriesLibraryConfig
 from models.hugging_face.utilities import compute_loss, get_device
+from models.hugging_face.utils.trainer_callbacks import IgnoreEarlyBestModelCallback
 from utils.data_load import DataGenerator
 
 PRED_LEN = 60
@@ -118,7 +119,8 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
             eval_dataset=val_dataset,
             tokenizer=None,
             compute_metrics=self.compute_metrics,
-            data_collator=self.collate_fn
+            data_collator=self.collate_fn,
+            callbacks=[IgnoreEarlyBestModelCallback(min_epoch=3)]
         )
 
         # Train model

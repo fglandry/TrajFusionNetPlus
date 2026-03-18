@@ -163,7 +163,7 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
             if trainer.state.best_metric > best_metric:
                 best_trainer = trainer
                 best_metric = trainer.state.best_metric
-
+        
         # Run second part of training procedure with the same trainer/optimizer instance      
         optimizer, lr_scheduler = get_optimizer(self, model, args, 
             train_dataset, val_dataset, data_train, train_opts,
@@ -386,20 +386,13 @@ def train_submodels(dataset: str,
     submodels_paths['sam_branch_path'] = sam_branch_path
 
     # VAM branch ===============================================================
-    
-    # Train VAN with image context at time t-15 with trajectory overlays
-    submodels_paths['static_img_index'] = -15
-    van_min15_path = run_and_capture_model_path(
-        ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
-         "-d", dataset, "-j", submodels_paths])
-    submodels_paths['van_min15_path'] = van_min15_path
 
-    # Train VAN with image context at time t-10 with trajectory overlays
-    submodels_paths['static_img_index'] = -10
-    van_min10_path = run_and_capture_model_path(
+    # Train VAN with image context at time t with trajectory overlays
+    submodels_paths['static_img_index'] = -1
+    van_0_path = run_and_capture_model_path(
         ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
          "-d", dataset, "-j", submodels_paths])
-    submodels_paths['van_min10_path'] = van_min10_path
+    submodels_paths['van_0_path'] = van_0_path
 
     # Train VAN with image context at time t-5 with trajectory overlays
     submodels_paths['static_img_index'] = -5
@@ -408,12 +401,19 @@ def train_submodels(dataset: str,
          "-d", dataset, "-j", submodels_paths])
     submodels_paths['van_min5_path'] = van_min5_path
 
-    # Train VAN with image context at time t with trajectory overlays
-    submodels_paths['static_img_index'] = -1
-    van_0_path = run_and_capture_model_path(
+    # Train VAN with image context at time t-10 with trajectory overlays
+    submodels_paths['static_img_index'] = -10
+    van_min10_path = run_and_capture_model_path(
         ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
          "-d", dataset, "-j", submodels_paths])
-    submodels_paths['van_0_path'] = van_0_path
+    submodels_paths['van_min10_path'] = van_min10_path
+    
+    # Train VAN with image context at time t-15 with trajectory overlays
+    submodels_paths['static_img_index'] = -15
+    van_min15_path = run_and_capture_model_path(
+        ["python3", "train_test.py", "-c", "config_files/VAN.yaml", 
+        "-d", dataset, "-j", submodels_paths])
+    submodels_paths['van_min15_path'] = van_min15_path
     
     # Train encoder transformer in VAM branch
     submodels_paths['static_img_index'] = None

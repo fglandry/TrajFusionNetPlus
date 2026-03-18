@@ -156,6 +156,7 @@ class ActionPredict(object):
                                      regen_data: bool = False,
                                      concatenate_frames: bool = False,
                                      is_feature_static: bool = False,
+                                     static_index: int = None,
                                      store_data_only: bool = False,
                                      model_opts: dict = None,
                                      submodels_paths: dict = None,
@@ -231,9 +232,12 @@ class ActionPredict(object):
 
                 # Modify the path depending on crop mode
                 if crop_type == 'none':
-                    img_save_path = os.path.join(img_save_folder, img_name + '.pkl')
+                    img_save_filename = img_name
+                elif static_index is not None:
+                    img_save_filename = img_name + '_' + p[0] + '_pos' + str(static_index)
                 else:
-                    img_save_path = os.path.join(img_save_folder, img_name + '_' + p[0] + '.pkl')
+                    img_save_filename = img_name + '_' + p[0]
+                img_save_path = os.path.join(img_save_folder, img_save_filename + '.pkl')
 
                 # Check whether the file exists
                 file_already_exists = os.path.exists(img_save_path) and not regen_data
@@ -1358,7 +1362,8 @@ class ActionPredict(object):
               train_opts: dict = None,
               hyperparams: dict = None,
               test_only: bool = False,
-              train_end_to_end: bool = False):
+              train_end_to_end: bool = False,
+              configs: dict = None):
         """
         Trains the models
         Args:
@@ -1431,6 +1436,7 @@ class ActionPredict(object):
 
             history_path, saved_files_path = get_path(**path_params, file_name='history.pkl')
             trainer["saved_files_path"] = saved_files_path
+            trainer["configs"] = configs
 
             return trainer
 
@@ -1519,7 +1525,11 @@ class ActionPredict(object):
         """
 
         if is_huggingface:
-            complete_data = self.get_data('test', data_test, {**model_opts, 'batch_size': 1})
+            complete_data = self.get_data(
+                'test', data_test, 
+                {**model_opts, 'batch_size': 1},
+                submodels_paths = model_path["configs"]["model_opts"].get("submodels_paths_override")
+            )
             test_data = complete_data["data"]
             model = self.get_huggingface_model(model_opts)
             return model.test(test_data, training_result, model_path, 
