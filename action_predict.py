@@ -1600,9 +1600,10 @@ class ActionPredict(object):
                 ["python3", "train_test.py", "-c", "config_files/SmallTrajectoryTransformer.yaml", 
                 "-d", dataset, "-s", "trajectory"])
         else:
-            traj_tf_path = run_and_capture_model_path(
-                ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
-                "-d", dataset, "-s", "trajectory"])
+            #traj_tf_path = run_and_capture_model_path(
+            #    ["python3", "train_test.py", "-c", "config_files/TrajectoryTransformer.yaml", 
+            #    "-d", dataset, "-s", "trajectory"])
+            traj_tf_path = "/home/francois/MASTER/TrajFusionNetPlus/data/models/jaad_all/TrajectoryTransformer/11Mar2026-21h31m40s"
 
         submodels_paths = {
             "traj_tf_path": traj_tf_path

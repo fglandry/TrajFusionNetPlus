@@ -258,10 +258,10 @@ class VANEncoderTransformer(TimeSeriesTransformerPreTrainedModel):
             van_0_path = submodels_paths["van_0_path"]
         else:
             if dataset_name == "jaad_all":
-                van_min15_path = "_data/models/jaad_all/VAN/weights_van_min15_jaadall"
-                van_min10_path = "_data/models/jaad_all/VAN/weights_van_min10_jaadall"
-                van_min5_path = "_data/models/jaad_all/VAN/weights_van_min5_jaadall"
-                van_0_path = "_data/models/jaad_all/VAN/weights_van_0_jaadall"
+                van_min15_path = "data/models/jaad_all/VAN/weights_van_min15_jaadall"
+                van_min10_path = "data/models/jaad_all/VAN/weights_van_min10_jaadall"
+                van_min5_path = "data/models/jaad_all/VAN/weights_van_min5_jaadall"
+                van_0_path = "data/models/jaad_all/VAN/weights_van_0_jaadall"
             elif dataset_name == "pie":
                 van_min15_path = "data/models/pie/VAN/weights_van_min15_pie"
                 van_min10_path = "data/models/pie/VAN/weights_van_min10_pie"
