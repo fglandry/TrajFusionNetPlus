@@ -7,7 +7,7 @@ from torchsummary import summary
 from transformers import TrainingArguments, Trainer
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerPreTrainedModel
 
-from models.hugging_face.model_trainers.trajectorytransformerb import load_pretrained_encoder_transformer
+from models.hugging_face.model_trainers.trajfusionnet_models.trajectorytransformerb import load_pretrained_encoder_transformer
 from models.hugging_face.model_trainers.van import load_pretrained_van
 from models.hugging_face.timeseries_utils import get_timeseries_datasets, test_time_series_based_model
 from models.hugging_face.timeseries_utils import HuggingFaceTimeSeriesModel, TorchTimeseriesDataset
