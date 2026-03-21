@@ -235,7 +235,6 @@ class ActionPredict(object):
                     img_save_filename = img_name
                 elif static_index is not None:
                     img_save_filename = img_name + '_' + p[0] + '_pos' + str(static_index)
-                    #img_save_filename = img_name + '_' + p[0]
                 else:
                     img_save_filename = img_name + '_' + p[0]
                 img_save_path = os.path.join(img_save_folder, img_save_filename + '.pkl')
