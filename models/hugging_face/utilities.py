@@ -6,13 +6,11 @@ import torch.nn.functional
 import torch.utils.checkpoint
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
-import warnings
 
 from transformers import PreTrainedModel, TimeSeriesTransformerConfig
 from transformers.trainer_utils import EvalPrediction
 from transformers.modeling_outputs import ImageClassifierOutputWithNoAttention
 from transformers.models.timesformer.modeling_timesformer import TimesformerEmbeddings
-from transformers.utils import logging as hf_logging
 
 from models.hugging_face.utils.focal_loss import FocalLoss
 
@@ -242,3 +240,7 @@ def get_device():
 def disable_hf_logging():
     logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
     logging.getLogger("transformers").setLevel(logging.ERROR)
+
+def enable_hf_logging():
+    logging.getLogger("transformers.modeling_utils").setLevel(logging.WARNING)
+    logging.getLogger("transformers").setLevel(logging.WARNING)

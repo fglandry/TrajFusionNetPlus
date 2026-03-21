@@ -161,8 +161,7 @@ class VAMBranch(HuggingFaceTimeSeriesModel):
             test_data,
             training_result,
             model_info,
-            generator,
-            **kwargs
+            generator
         )
 
 

@@ -34,6 +34,7 @@ from tqdm import tqdm
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve
 
+from models.hugging_face.utilities import enable_hf_logging
 from utils.action_predict_utils.run_in_subprocess import run_and_capture_model_path
 from utils.action_predict_utils.trajectory_overlays import TrajectoryOverlays
 from utils.action_predict_utils.sequences import compute_sequences
@@ -1532,6 +1533,7 @@ class ActionPredict(object):
             )
             test_data = complete_data["data"]
             model = self.get_huggingface_model(model_opts)
+            enable_hf_logging()
             return model.test(test_data, training_result, model_path, 
                               generator=self._generator, 
                               complete_data=complete_data,

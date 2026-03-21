@@ -12,7 +12,6 @@ from models.hugging_face.image_utils import convert_img_to_format_used_by_transf
 from models.hugging_face.utilities import compute_huggingface_metrics, compute_huggingface_forecast_metrics
 from models.hugging_face.video_utils import get_video_transforms
 from transformers.trainer_utils import EvalPrediction
-import tqdm
 
 
 def get_timeseries_datasets(data_train: dict, data_val: Any,

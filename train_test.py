@@ -199,9 +199,6 @@ def train_test_model(configs: dict, beh_seq_train: dict,
     # get options related to the model, only needed when it is a huggingface model
     model_opts = configs['model_opts'] if is_huggingface else None
 
-    #if is_huggingface and test_only:
-    #    hf_logging.set_verbosity(prev_level)
-
     # test and evaluate the model
     acc, auc, f1, precision, recall = method_class.test(
         beh_seq_test, saved_files_path, 
