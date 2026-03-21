@@ -239,26 +239,6 @@ def get_device():
         device = torch.device('cpu')
     return device
 
-def ignore_huggingface_mismatch_warning():
-    # Suppress HuggingFace logger warnings
-    #warnings.filterwarnings(
-    #    "ignore",
-    #    message=".*You should probably TRAIN this model.*"
-    #)
-    #warnings.filterwarnings(
-    #    "ignore",
-    #    message=".*Some weights of the model checkpoint at.*"
-    #)
+def disable_hf_logging():
     logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
     logging.getLogger("transformers").setLevel(logging.ERROR)
-
-def disable_hf_logging(is_huggingface, test_only):
-    if is_huggingface and test_only:
-        prev_hf_logging_level = hf_logging.get_verbosity()
-        #prev_hf_progress_bar_state = hf_logging.is_progress_bar_enabled()
-        #hf_logging.set_verbosity_error()
-        #hf_logging.disable_progress_bar()
-        #return hf_logging, prev_hf_logging_level, prev_hf_progress_bar_state
-        ignore_huggingface_mismatch_warning()
-        return hf_logging, prev_hf_logging_level
-    return None

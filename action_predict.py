@@ -1508,8 +1508,7 @@ class ActionPredict(object):
              is_huggingface=False, 
              training_result=None,
              model_opts=None,
-             test_only=None,
-             prev_hf_logging_level=None):
+             test_only=None):
         """
         Evaluates a given model
         Args:

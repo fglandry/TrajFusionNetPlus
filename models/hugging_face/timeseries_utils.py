@@ -735,9 +735,7 @@ def test_time_series_based_model(
         generator: bool,
         save_results: bool = True,
         ignore_sem_map: bool = False,
-        complete_data = None,
-        prev_hf_logging_level = None,
-        **kwargs
+        complete_data = None
     ):
     
     if training_result["val_transform"]:
@@ -756,7 +754,7 @@ def test_time_series_based_model(
     #    verbosity_level = prev_hf_logging_level[1]
     #    progress_bar_state = prev_hf_logging_level[2] if len(prev_hf_logging_level) > 2 else True
     #   
-    #   hf_logging.set_verbosity(verbosity_level)
+    #    hf_logging.set_verbosity(verbosity_level)
     #    if progress_bar_state:
     #        hf_logging.enable_progress_bar()
     #        #tqdm_enable()

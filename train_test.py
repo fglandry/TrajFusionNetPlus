@@ -170,7 +170,8 @@ def train_test_model(configs: dict, beh_seq_train: dict,
     is_huggingface = configs['model_opts'].get("frameworks") and configs['model_opts']["frameworks"]["hugging_faces"]
     free_memory = False if (hyperparams is not None and hyperparams) else free_memory
 
-    prev_hf_logging_level = disable_hf_logging(is_huggingface, test_only)
+    if is_huggingface and test_only:
+        disable_hf_logging()
 
     # get the model
     model_configs = copy.deepcopy(configs['net_opts'])
@@ -207,8 +208,7 @@ def train_test_model(configs: dict, beh_seq_train: dict,
         is_huggingface=is_huggingface,
         training_result=saved_files_path,
         model_opts=model_opts,
-        test_only=test_only,
-        prev_hf_logging_level=prev_hf_logging_level)
+        test_only=test_only)
     
     if enable_cross_dataset_test and beh_seq_test_cross_dataset:
         if type(beh_seq_test_cross_dataset) is list: # model was trained on combined dataset
