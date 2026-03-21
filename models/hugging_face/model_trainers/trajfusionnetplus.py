@@ -217,7 +217,8 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
             test_data,
             training_result,
             model_info,
-            generator
+            generator,
+            **kwargs
         )
 
 
