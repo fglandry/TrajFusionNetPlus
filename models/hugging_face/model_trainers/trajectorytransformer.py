@@ -246,7 +246,7 @@ def load_pretrained_trajectory_transformer(dataset_name: str,
         elif dataset_name == "jaad_all":
             checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
         elif dataset_name == "jaad_beh":
-            checkpoint = "data/models/jaad_beh/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
+            checkpoint = "data/models/jaad_beh/TrajFusionNet/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
 
     pretrained_model = VanillaTransformerForForecast.from_pretrained(
         checkpoint,

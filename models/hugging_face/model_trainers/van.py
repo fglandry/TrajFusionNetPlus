@@ -262,16 +262,15 @@ def load_pretrained_van(dataset_name: str,
             checkpoint1 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7"
             checkpoint2 = "data/models/combined/VAN/05Apr2025-09h52m52s_CO7"
         elif dataset_name == "pie":
-            checkpoint1 = "data/models/pie/VAN/weights_van1_pie"
-            checkpoint2 = "data/models/pie/VAN/weights_van2_pie"
-            checkpoint2 = checkpoint1
+            checkpoint1 = "data/models/pie/TrajFusionNet/VAN/weights_van1_pie"
+            checkpoint2 = "data/models/pie/TrajFusionNet/VAN/weights_van2_pie"
         elif dataset_name == "jaad_all":
-            checkpoint1 = "data/models/jaad_all/VAN/weights_van1_jaadall"
-            checkpoint2 = checkpoint1
-
+            checkpoint1 = "data/models/jaad_all/TrajFusionNet/VAN/weights_van1_jaadall"
+            checkpoint2 = "data/models/jaad_all/TrajFusionNet/VAN/weights_van2_jaadall"
         elif dataset_name == "jaad_beh":
-            checkpoint1 = "data/models/jaad_beh/VAN/weights_van1_jaadbeh"
-            checkpoint2 = "data/models/jaad_beh/VAN/weights_van2_jaadbeh"
+            checkpoint1 = "data/models/jaad_beh/TrajFusionNet/VAN/weights_van1_jaadbeh"
+            checkpoint2 = "data/models/jaad_beh/TrajFusionNet/VAN/weights_van2_jaadbeh"
+    
     
     checkpoint = checkpoint1 if is_predicted_overlays else checkpoint2
 

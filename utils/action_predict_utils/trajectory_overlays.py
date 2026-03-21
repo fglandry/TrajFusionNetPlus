@@ -55,7 +55,7 @@ class TrajectoryOverlays(metaclass=Singleton):
             elif self._dataset == "jaad_all":
                 checkpoint = "data/models/jaad_all/TrajectoryTransformer/weights_trajectorytransformer_jaadall"
             elif self._dataset == "jaad_beh":
-                checkpoint = "data/models/jaad_beh/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
+                checkpoint = "data/models/jaad_beh/TrajFusionNet/TrajectoryTransformer/weights_trajectorytransformer_jaadbeh"
 
         pretrained_model = VanillaTransformerForForecast.from_pretrained(
             checkpoint,
@@ -124,25 +124,24 @@ class TrajectoryOverlays(metaclass=Singleton):
         absolute_pred_coords = np.concatenate([absolute_pred_coords, 
                                                np.expand_dims(denormalized[:,-1], 1)], axis=1)
 
-        if "with_ped_overlays_previous" in feature_type or \
-            "with_ped_overlays_combined" in feature_type:
+        if feature_type.endswith("with_ped_overlays_previous") or \
+            feature_type.endswith("with_ped_overlays_combined"):
             # Add observed bounding boxes as overlays on image
             for idx, coords in enumerate(bbox_sequence):
                 if idx == 0 or ((idx+1) % 5 == 0): # add first bbox and then every 5th
                     b_org = list(map(int, coords[0:4])).copy()
-                    if check_if_bbox_outside_image(img_features, b_org):
+                    if check_if_bbox_outside_image(img_features, b_org) and feature_type.endswith("with_ped_overlays_combined"):
                         continue
                     img_features[b_org[1]:b_org[3], b_org[0]:b_org[2], 0:2] = \
                         np.array(ade_palette()[idx])[0:2]
 
-        if "with_ped_overlays" in feature_type or \
-            "with_ped_overlays_combined" in feature_type:
+        if feature_type.endswith("with_ped_overlays") or \
+            feature_type.endswith("with_ped_overlays_combined"):
             # Add predicted bounding boxes as overlays on image
             for idx, coords in enumerate(absolute_pred_coords):
                 b_org = list(map(int, coords[0:4])).copy()
-                if check_if_bbox_outside_image(img_features, b_org):
+                if check_if_bbox_outside_image(img_features, b_org) and feature_type.endswith("with_ped_overlays_combined"):
                         continue
-                
                 if (idx+1) % 5 == 0: # only add each 5th box
                     img_features[b_org[1]:b_org[3], b_org[0]:b_org[2], 0:2] = \
                         np.array(ade_palette()[idx+15])[0:2]
