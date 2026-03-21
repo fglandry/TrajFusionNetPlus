@@ -11,6 +11,7 @@ from transformers import set_seed as huggingface_set_seed
 import torch
 
 from action_predict import ActionPredict
+from models.hugging_face.utilities import disable_hf_logging
 from models.models import *
 from models.multi_branch_models.combined_models import *
 from utils.action_predict_utils.sequences import get_trajectory_sequences 
@@ -169,6 +170,8 @@ def train_test_model(configs: dict, beh_seq_train: dict,
     is_huggingface = configs['model_opts'].get("frameworks") and configs['model_opts']["frameworks"]["hugging_faces"]
     free_memory = False if (hyperparams is not None and hyperparams) else free_memory
 
+    prev_hf_logging_level = disable_hf_logging(is_huggingface, test_only)
+
     # get the model
     model_configs = copy.deepcopy(configs['net_opts'])
     configs['model_opts']['seq_type'] = configs['data_opts']['seq_type']
@@ -195,13 +198,17 @@ def train_test_model(configs: dict, beh_seq_train: dict,
     # get options related to the model, only needed when it is a huggingface model
     model_opts = configs['model_opts'] if is_huggingface else None
 
+    #if is_huggingface and test_only:
+    #    hf_logging.set_verbosity(prev_level)
+
     # test and evaluate the model
     acc, auc, f1, precision, recall = method_class.test(
         beh_seq_test, saved_files_path, 
         is_huggingface=is_huggingface,
         training_result=saved_files_path,
         model_opts=model_opts,
-        test_only=test_only)
+        test_only=test_only,
+        prev_hf_logging_level=prev_hf_logging_level)
     
     if enable_cross_dataset_test and beh_seq_test_cross_dataset:
         if type(beh_seq_test_cross_dataset) is list: # model was trained on combined dataset

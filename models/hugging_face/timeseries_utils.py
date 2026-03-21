@@ -12,6 +12,7 @@ from models.hugging_face.image_utils import convert_img_to_format_used_by_transf
 from models.hugging_face.utilities import compute_huggingface_metrics, compute_huggingface_forecast_metrics
 from models.hugging_face.video_utils import get_video_transforms
 from transformers.trainer_utils import EvalPrediction
+import tqdm
 
 
 def get_timeseries_datasets(data_train: dict, data_val: Any,
@@ -734,7 +735,9 @@ def test_time_series_based_model(
         generator: bool,
         save_results: bool = True,
         ignore_sem_map: bool = False,
-        complete_data = None
+        complete_data = None,
+        prev_hf_logging_level = None,
+        **kwargs
     ):
     
     if training_result["val_transform"]:
@@ -747,6 +750,17 @@ def test_time_series_based_model(
         val_video_transform, val_img_transform = None, None
         val_segm_map_transform, val_segm_map2_transform = None, None
     trainer = training_result["trainer"]
+
+    #if prev_hf_logging_level:
+    #    hf_logging = prev_hf_logging_level[0]
+    #    verbosity_level = prev_hf_logging_level[1]
+    #    progress_bar_state = prev_hf_logging_level[2] if len(prev_hf_logging_level) > 2 else True
+    #   
+    #   hf_logging.set_verbosity(verbosity_level)
+    #    if progress_bar_state:
+    #        hf_logging.enable_progress_bar()
+    #        #tqdm_enable()
+    #    trainer.args.disable_tqdm = False
     
     if not generator:
         _test_data = test_data[0][0]

@@ -1508,7 +1508,8 @@ class ActionPredict(object):
              is_huggingface=False, 
              training_result=None,
              model_opts=None,
-             test_only=None):
+             test_only=None,
+             prev_hf_logging_level=None):
         """
         Evaluates a given model
         Args:
@@ -1536,7 +1537,8 @@ class ActionPredict(object):
                               generator=self._generator, 
                               complete_data=complete_data,
                               dataset_name=model_opts["dataset_full"],
-                              test_only=test_only)
+                              test_only=test_only,
+                              prev_hf_logging_level=prev_hf_logging_level)
             
         with open(os.path.join(model_path, 'configs.yaml'), 'r') as fid:
             opts = yaml.safe_load(fid)

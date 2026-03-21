@@ -1,16 +1,18 @@
 from datasets import load_metric
+import logging
 import numpy as np
 import torch
 import torch.nn.functional
 import torch.utils.checkpoint
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+import warnings
 
 from transformers import PreTrainedModel, TimeSeriesTransformerConfig
 from transformers.trainer_utils import EvalPrediction
 from transformers.modeling_outputs import ImageClassifierOutputWithNoAttention
 from transformers.models.timesformer.modeling_timesformer import TimesformerEmbeddings
-from transformers import logging
+from transformers.utils import logging as hf_logging
 
 from models.hugging_face.utils.focal_loss import FocalLoss
 
@@ -236,3 +238,27 @@ def get_device():
     else:
         device = torch.device('cpu')
     return device
+
+def ignore_huggingface_mismatch_warning():
+    # Suppress HuggingFace logger warnings
+    #warnings.filterwarnings(
+    #    "ignore",
+    #    message=".*You should probably TRAIN this model.*"
+    #)
+    #warnings.filterwarnings(
+    #    "ignore",
+    #    message=".*Some weights of the model checkpoint at.*"
+    #)
+    logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
+    logging.getLogger("transformers").setLevel(logging.ERROR)
+
+def disable_hf_logging(is_huggingface, test_only):
+    if is_huggingface and test_only:
+        prev_hf_logging_level = hf_logging.get_verbosity()
+        #prev_hf_progress_bar_state = hf_logging.is_progress_bar_enabled()
+        #hf_logging.set_verbosity_error()
+        #hf_logging.disable_progress_bar()
+        #return hf_logging, prev_hf_logging_level, prev_hf_progress_bar_state
+        ignore_huggingface_mismatch_warning()
+        return hf_logging, prev_hf_logging_level
+    return None
