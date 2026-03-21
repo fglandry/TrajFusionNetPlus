@@ -204,12 +204,11 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
              *args,
              dataset_name: str = "",
              generator: bool = False,
-             test_only: bool = False,
              **kwargs):
         
         print("Starting inference using trained model ===========================")
 
-        if test_only:
+        if kwargs.get("test_only"):
             pretrained_model = load_pretrained_trajfusionnet(dataset_name)
             training_result["trainer"].model = pretrained_model
 

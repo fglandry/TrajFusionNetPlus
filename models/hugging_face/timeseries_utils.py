@@ -737,7 +737,7 @@ def test_time_series_based_model(
         complete_data = None,
         **kwargs
     ):
-    if kwargs.get("is_huggingface"):
+    if kwargs.get("is_huggingface") and kwargs.get("test_only"):
         enable_hf_logging()
     if training_result["val_transform"]:
         val_video_transform = training_result["val_transform"]["val_video_transform"]
