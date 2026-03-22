@@ -1,4 +1,5 @@
 from datasets import load_metric
+import logging
 import numpy as np
 import torch
 import torch.nn.functional
@@ -10,7 +11,6 @@ from transformers import PreTrainedModel, TimeSeriesTransformerConfig
 from transformers.trainer_utils import EvalPrediction
 from transformers.modeling_outputs import ImageClassifierOutputWithNoAttention
 from transformers.models.timesformer.modeling_timesformer import TimesformerEmbeddings
-from transformers import logging
 
 from models.hugging_face.utils.focal_loss import FocalLoss
 
@@ -236,3 +236,11 @@ def get_device():
     else:
         device = torch.device('cpu')
     return device
+
+def disable_hf_logging():
+    logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
+    logging.getLogger("transformers").setLevel(logging.ERROR)
+
+def enable_hf_logging():
+    logging.getLogger("transformers.modeling_utils").setLevel(logging.WARNING)
+    logging.getLogger("transformers").setLevel(logging.WARNING)

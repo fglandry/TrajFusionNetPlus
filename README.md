@@ -19,7 +19,7 @@ TrajFusionNet+ is composed of three branches:
 Start by creating a conda environment:
 
 ```bash
-conda create -n trajfusionnet-env python=3.10 pytorch torchvision pytorchvideo pytorch-cuda accelerate tensorflow -c pytorch -c nvidia -c conda-forge
+conda create -n trajfusionnet-env python=3.10 pytorch "torchvision<0.15" pytorchvideo pytorch-cuda accelerate tensorflow -c pytorch -c nvidia -c conda-forge
 ```
 
 The pytorch-cuda version might need to be specified depending on your NVIDIA driver version.

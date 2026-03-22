@@ -1,16 +1,19 @@
 import copy
 import getopt
 import os
+from pathlib import Path
 import random
 import sys
 import yaml
 import json
 
+from huggingface_hub import snapshot_download
 import numpy as np
 from transformers import set_seed as huggingface_set_seed
 import torch
 
 from action_predict import ActionPredict
+from models.hugging_face.utilities import disable_hf_logging
 from models.models import *
 from models.multi_branch_models.combined_models import *
 from utils.action_predict_utils.sequences import get_trajectory_sequences 
@@ -76,6 +79,8 @@ def run(config_file: str = None,
     """
     if compute_time_writing_to_disk:
         global TIME_WRITING_TO_DISK
+    load_weights_from_huggingface()
+
     print(config_file)
     # Read default Config file
     configs_default ='config_files/configs_default.yaml'
@@ -168,6 +173,9 @@ def train_test_model(configs: dict, beh_seq_train: dict,
     
     is_huggingface = configs['model_opts'].get("frameworks") and configs['model_opts']["frameworks"]["hugging_faces"]
     free_memory = False if (hyperparams is not None and hyperparams) else free_memory
+
+    if is_huggingface and test_only:
+        disable_hf_logging()
 
     # get the model
     model_configs = copy.deepcopy(configs['net_opts'])
@@ -279,6 +287,14 @@ def set_seeds(seed=SEED):
 def set_global_determinism(seed=SEED):
     set_seeds(seed=seed)
 
+def load_weights_from_huggingface():
+    weights_path = Path(__file__).resolve().parent / "data/models"
+    weights_path.mkdir(parents=True, exist_ok=True)
+    snapshot_download(
+        repo_id="efl7126/trajfusionnet-plus",
+        local_dir=weights_path,
+        local_dir_use_symlinks=False
+    )
 
 if __name__ == '__main__':
     try:

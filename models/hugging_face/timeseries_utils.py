@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from transformers import AutoImageProcessor
 
 from models.hugging_face.image_utils import convert_img_to_format_used_by_transform, get_image_transforms
-from models.hugging_face.utilities import compute_huggingface_metrics, compute_huggingface_forecast_metrics
+from models.hugging_face.utilities import compute_huggingface_metrics, compute_huggingface_forecast_metrics, enable_hf_logging
 from models.hugging_face.video_utils import get_video_transforms
 from transformers.trainer_utils import EvalPrediction
 
@@ -734,9 +734,11 @@ def test_time_series_based_model(
         generator: bool,
         save_results: bool = True,
         ignore_sem_map: bool = False,
-        complete_data = None
+        complete_data = None,
+        **kwargs
     ):
-    
+    if kwargs.get("is_huggingface") and kwargs.get("test_only"):
+        enable_hf_logging()
     if training_result["val_transform"]:
         val_video_transform = training_result["val_transform"]["val_video_transform"]
         val_img_transform = training_result["val_transform"]["val_img_transform"]

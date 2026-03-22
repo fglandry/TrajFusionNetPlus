@@ -103,7 +103,8 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
             load_best_model_at_end=True,
             metric_for_best_model="auc",
             push_to_hub=False,
-            max_steps=-1
+            max_steps=-1,
+            disable_tqdm=False
         )
         
         if test_only:
@@ -203,12 +204,11 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
              *args,
              dataset_name: str = "",
              generator: bool = False,
-             test_only: bool = False,
              **kwargs):
         
         print("Starting inference using trained model ===========================")
 
-        if test_only:
+        if kwargs.get("test_only"):
             pretrained_model = load_pretrained_trajfusionnet(dataset_name)
             training_result["trainer"].model = pretrained_model
 
@@ -216,7 +216,8 @@ class TrajFusionNetPlus(HuggingFaceTimeSeriesModel):
             test_data,
             training_result,
             model_info,
-            generator
+            generator,
+            **kwargs
         )
 
 
