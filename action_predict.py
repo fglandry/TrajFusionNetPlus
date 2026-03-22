@@ -5,23 +5,6 @@ import time
 from typing import Any
 import yaml
 
-TENSORFLOW = True
-if TENSORFLOW:
-    import tensorflow as tf
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-            print("Memory growth enabled for GPUs")
-        except RuntimeError as e:
-            print("Error setting memory growth:", e)
-
-    from tensorflow.keras import mixed_precision
-    mixed_precision.set_global_policy('mixed_float16')
-    
-    import tensorflow_addons as tfa
-
 from tensorflow.keras.layers import GRU, LSTM, RNN
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
